@@ -3,9 +3,6 @@ package com.civis.app.utils
 import android.content.Context
 import android.content.SharedPreferences
 import com.civis.app.data.model.User
-import com.google.gson.Gson
-
-private val appGson: Gson = com.civis.app.utils.appGson
 
 class TokenManager private constructor(context: Context) {
 

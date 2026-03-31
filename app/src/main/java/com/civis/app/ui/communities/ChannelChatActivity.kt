@@ -5,9 +5,11 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.civis.app.data.api.ApiClient
+import com.civis.app.data.local.LocalMessage
 import com.civis.app.data.model.Message
 import com.civis.app.data.model.SendMessageRequest
 import com.civis.app.databinding.ActivityChannelChatBinding
+import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.showToast
 import com.google.gson.Gson
@@ -21,7 +23,7 @@ import org.json.JSONObject
 class ChannelChatActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityChannelChatBinding
-    private val messages = mutableListOf<Message>()
+    private val messages = mutableListOf<LocalMessage>()
     private var communityId: String = ""
     private var channelId: String = ""
     private var channelName: String = ""
@@ -35,61 +37,41 @@ class ChannelChatActivity : AppCompatActivity() {
         channelId = intent.getStringExtra("channelId") ?: ""
         channelName = intent.getStringExtra("channelName") ?: "Canal"
 
+        binding.toolbar.title = channelName
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        supportActionBar?.title = "# $channelName"
         binding.toolbar.setNavigationOnClickListener { finish() }
 
-        setupRecyclerView()
-        setupListeners()
-        loadMessages()
-        setupSocketListeners()
-    }
-
-    private fun setupRecyclerView() {
-        val adapter = com.civis.app.ui.chat.ChatAdapter(
-            onMessageLongClick = { _, _ -> }
-        )
+        val adapter = com.civis.app.ui.chat.ChatAdapter(onMessageLongClick = { _, _ -> })
         binding.recyclerViewMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
         binding.recyclerViewMessages.adapter = adapter
-    }
 
-    private fun setupListeners() {
+        loadMessages()
+
         binding.btnSend.setOnClickListener {
-            sendChannelMessage()
-        }
-
-        binding.etMessage.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
-                sendChannelMessage()
-                true
-            } else {
-                false
-            }
+            sendMessage()
         }
     }
 
-    private fun sendChannelMessage() {
+    private fun sendMessage() {
         val content = binding.etMessage.text.toString().trim()
         if (content.isEmpty()) return
-        binding.etMessage.text.clear()
-
-        val request = SendMessageRequest(
-            content = content,
-            messageType = "text"
-        )
+        binding.etMessage.text?.clear()
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.communitiesApi.sendChannelMessage(communityId, channelId, request)
+                val response = ApiClient.messagesApi.sendMessage(
+                    SendMessageRequest(content = content, messageType = "text")
+                )
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null) {
                         val msg = Gson().fromJson(Gson().toJson(data), Message::class.java)
+                        val localMsg = OfflineSyncManager.toLocalMessage(msg, "sent")
                         withContext(Dispatchers.Main) {
-                            messages.add(msg)
+                            messages.add(localMsg)
                             (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
                             binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
                         }
@@ -104,40 +86,13 @@ class ChannelChatActivity : AppCompatActivity() {
     private fun loadMessages() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.communitiesApi.getChannelMessages(communityId, channelId)
+                // Los canales usan un endpoint diferente, por ahora mostramos vacío
                 withContext(Dispatchers.Main) {
-                    if (response.isSuccessful) {
-                        val data = response.body()?.data
-                        if (data != null) {
-                            val type = object : TypeToken<List<Message>>() {}.type
-                            val list: List<Message> = Gson().fromJson(Gson().toJson(data), type)
-                            messages.clear()
-                            messages.addAll(list)
-                            (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
-                            if (messages.isNotEmpty()) {
-                                binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
-                            }
-                        }
-                    }
+                    (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
                 }
-            } catch (_: Exception) {}
-        }
-    }
-
-    private fun setupSocketListeners() {
-        SocketManager.on("channel_message") { args ->
-            val data = args.firstOrNull() as? JSONObject ?: return@on
-            val message = Gson().fromJson(data.toString(), Message::class.java)
-            runOnUiThread {
-                messages.add(message)
-                (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
-                binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { showToast("Error al cargar mensajes") }
             }
         }
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        SocketManager.off("channel_message")
     }
 }

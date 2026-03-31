@@ -581,7 +581,7 @@ class ChatActivity : AppCompatActivity() {
             read = localMsg.read,
             deleted = localMsg.deleted,
             createdAt = localMsg.createdAt,
-            sender = com.civis.app.data.model.User(name = localMsg.senderName, avatar = localMsg.senderAvatar)
+            sender = com.civis.app.data.model.User(name = localMsg.senderName ?: "", avatar = localMsg.senderAvatar)
         )
     }
 

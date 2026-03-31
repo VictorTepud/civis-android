@@ -1,7 +1,7 @@
 package com.civis.app
 
 import android.app.Application
-import com.civis.app.data.local.AppDatabase
+import com.civis.app.data.local.LocalDatabase
 import com.civis.app.utils.NetworkMonitor
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
@@ -13,8 +13,8 @@ class CivisApp : Application() {
         super.onCreate()
         TokenManager.init(this)
 
-        // Inicializar base de datos local (Room)
-        val database = AppDatabase.getInstance(this)
+        // Inicializar base de datos local (SQLite directo)
+        val database = LocalDatabase.getInstance(this)
         OfflineSyncManager.init(database)
 
         // Monitorear estado de conexión

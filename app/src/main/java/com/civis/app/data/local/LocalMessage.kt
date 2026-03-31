@@ -1,17 +1,10 @@
 package com.civis.app.data.local
 
-import androidx.room.Entity
-import androidx.room.PrimaryKey
-import androidx.room.TypeConverters
-import androidx.room.ColumnInfo
-
 /**
- * Entidad de Room para almacenar mensajes localmente.
- * Permite funcionar sin conexión a internet.
+ * Modelo de mensaje local (almacenado en SQLite).
+ * Equivalente al anterior LocalMessage de Room, pero sin anotaciones.
  */
-@Entity(tableName = "local_messages")
 data class LocalMessage(
-    @PrimaryKey
     val id: String,
     val conversationId: String,
     val senderId: String,
@@ -30,7 +23,7 @@ data class LocalMessage(
     /**
      * Estado del mensaje:
      * - "pending": creado localmente, espera para enviarse
-     * - "sending":正在通过网络发送
+     * - "sending": enviándose por la red
      * - "sent": enviado al servidor correctamente
      * - "failed": error al enviar, se puede reintentar
      */

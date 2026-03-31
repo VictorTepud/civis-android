@@ -278,8 +278,8 @@ class ChatActivity : AppCompatActivity() {
                 }
                 inputStream.close()
 
-                val mediaType = (contentResolver.getType(uri) ?: "image/*").toMediaType()
-                val requestFile = okhttp3.RequestBody.Companion.asRequestBody(mediaType, file)
+                val mediaType = okhttp3.MediaType.parse(contentResolver.getType(uri) ?: "image/*") ?: okhttp3.MediaType.parse("image/*")!!
+                val requestFile = okhttp3.RequestBody.create(mediaType, file)
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
@@ -429,7 +429,7 @@ class ChatActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 // Marcar en base local
-                OfflineSyncManager.db?.messageDao()?.markAllAsRead(conversationId, currentUserId)
+                OfflineSyncManager.markAllAsReadLocal(conversationId, currentUserId)
 
                 // Marcar en servidor (si hay conexión)
                 val unread = messages.filter { !it.read && it.senderId != currentUserId }
@@ -590,9 +590,4 @@ class ChatActivity : AppCompatActivity() {
         SocketManager.off("stop_typing_$currentUserId")
         SocketManager.off("message_read_$currentUserId")
     }
-}
-
-// Extensión privada para crear asRequestBody con File
-private fun okhttp3.RequestBody.Companion.asRequestBody(mediaType: okhttp3.MediaType, file: java.io.File): okhttp3.RequestBody {
-    return file.asRequestBody(mediaType)
 }

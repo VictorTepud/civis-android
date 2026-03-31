@@ -50,18 +50,21 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/tvCallStatus" />
 
-    <org.webrtc.SurfaceViewRenderer
+    <!-- Los SurfaceViewRenderer de WebRTC se agregarán al integrar la librería nativa -->
+    <View
         android:id="@+id/surfaceViewRemote"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:visibility="gone"
         app:layout_constraintBottom_toTopOf="@+id/linearLayoutControls"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <org.webrtc.SurfaceViewRenderer
+    <View
         android:id="@+id/surfaceViewLocal"
         android:layout_width="100dp"
         android:layout_height="150dp"
         android:layout_margin="@dimen/spacing_md"
+        android:visibility="gone"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 

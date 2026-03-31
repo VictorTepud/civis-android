@@ -55,6 +55,7 @@ data class Conversation(
     val lastMessageTime: String? = null,
     val unreadCount: Int = 0,
     val participants: List<User> = emptyList(),
+    val otherUser: User? = null,
     val online: Boolean = false
 )
 

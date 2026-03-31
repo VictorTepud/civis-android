@@ -1,16 +1,15 @@
 package com.civis.app.data.api
 
 import com.civis.app.data.model.*
-import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.*
 
 interface AuthApi {
     @POST("auth/register")
-    suspend fun register(@Body req: RegisterRequest): Response<AuthResponse>
+    suspend fun register(@Body req: RegisterRequest): Response<ApiResponse>
 
     @POST("auth/login")
-    suspend fun login(@Body req: LoginRequest): Response<AuthResponse>
+    suspend fun login(@Body req: LoginRequest): Response<ApiResponse>
 
     @GET("auth/verify-token")
     suspend fun verifyToken(): Response<ApiResponse>

@@ -12,7 +12,7 @@ import com.civis.app.data.model.Conversation
 import com.civis.app.databinding.FragmentChatsBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.contacts.AddContactActivity
-import com.civis.app.ui.groups.CreateGroupActivity
+import com.civis.app.utils.NetworkMonitor
 import com.civis.app.utils.showToast
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
@@ -43,19 +43,33 @@ class ChatsFragment : Fragment() {
         loadConversations()
     }
 
+    /**
+     * Se ejecuta cada vez que el fragment vuelve a ser visible.
+     * Esto permite actualizar la lista de chats después de enviar
+     * un mensaje o volver de una conversación.
+     */
+    override fun onResume() {
+        super.onResume()
+        loadConversations()
+    }
+
     private fun setupRecyclerView() {
         adapter = ConversationAdapter(
             onItemClick = { conversation ->
                 val intent = Intent(requireContext(), ChatActivity::class.java).apply {
                     putExtra("conversationId", conversation.id)
-                    putExtra("receiverId", conversation.participants.firstOrNull()?.id ?: "")
-                    putExtra("receiverName", conversation.name ?: conversation.participants.firstOrNull()?.name ?: "")
-                    putExtra("receiverAvatar", conversation.avatar ?: conversation.participants.firstOrNull()?.avatar ?: "")
+                    // Soporta tanto otherUser como participants para compatibilidad
+                    val otherUser = conversation.otherUser
+                    val participant = conversation.participants.firstOrNull()
+                    putExtra("receiverId", otherUser?.id ?: participant?.id ?: "")
+                    putExtra("receiverName", otherUser?.name ?: conversation.name ?: participant?.name ?: "")
+                    putExtra("receiverAvatar", otherUser?.avatar ?: participant?.avatar ?: "")
                 }
                 startActivity(intent)
             },
             onLongClick = { conversation ->
-                conversation.name?.let { requireContext().showToast("$it: Silenciar, Bloquear, Eliminar") }
+                val name = conversation.otherUser?.name ?: conversation.name
+                name?.let { requireContext().showToast("$it: Silenciar, Bloquear, Eliminar") }
             }
         )
         binding.recyclerViewChats.layoutManager = LinearLayoutManager(requireContext())
@@ -70,6 +84,12 @@ class ChatsFragment : Fragment() {
     }
 
     private fun loadConversations() {
+        if (!NetworkMonitor.isConnected.value) {
+            // Sin conexión - mostrar advertencia
+            binding.swipeRefreshLayout.isRefreshing = false
+            return
+        }
+
         binding.swipeRefreshLayout.isRefreshing = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
@@ -83,7 +103,7 @@ class ChatsFragment : Fragment() {
                             val list: List<Conversation> = Gson().fromJson(Gson().toJson(data), type)
                             conversations.clear()
                             conversations.addAll(list)
-                            adapter.submitList(conversations)
+                            adapter.submitList(conversations.toList())
                         }
                     } else {
                         requireContext().showToast("Error al cargar conversaciones")

@@ -6,7 +6,7 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.civis.app.R
-import com.civis.app.data.model.Message
+import com.civis.app.data.local.LocalMessage
 import com.civis.app.databinding.ItemMessageSentBinding
 import com.civis.app.databinding.ItemMessageReceivedBinding
 import com.civis.app.databinding.ItemMessageImageBinding
@@ -15,10 +15,10 @@ import com.civis.app.utils.formatTime
 import com.civis.app.utils.toGlideUrl
 
 class ChatAdapter(
-    private val onMessageLongClick: (Message, View) -> Unit
+    private val onMessageLongClick: (LocalMessage, View) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val messages = mutableListOf<Message>()
+    private val messages = mutableListOf<LocalMessage>()
     private val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
 
     companion object {
@@ -28,7 +28,7 @@ class ChatAdapter(
         const val TYPE_RECEIVED_IMAGE = 3
     }
 
-    fun submitList(list: List<Message>) {
+    fun submitList(list: List<LocalMessage>) {
         messages.clear()
         messages.addAll(list)
         notifyDataSetChanged()
@@ -67,16 +67,37 @@ class ChatAdapter(
 
     override fun getItemCount(): Int = messages.size
 
-    private fun bindSentText(binding: ItemMessageSentBinding, message: Message) {
+    private fun bindSentText(binding: ItemMessageSentBinding, message: LocalMessage) {
         binding.tvMessageContent.text = if (message.deleted) "Este mensaje fue eliminado" else message.content
         binding.tvTime.text = message.createdAt?.formatTime() ?: ""
 
+        // Estado del mensaje: pendiente, enviando, enviado, leído
         when {
-            message.read -> binding.ivReadReceipt.setImageResource(R.drawable.ic_double_check_blue)
-            message.content != null -> binding.ivReadReceipt.setImageResource(R.drawable.ic_double_check)
-            else -> binding.ivReadReceipt.setImageResource(R.drawable.ic_check)
+            message.status == "pending" -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_clock)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
+            message.status == "sending" -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_clock)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
+            message.status == "failed" -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_error)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
+            message.read -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_double_check_blue)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
+            message.content != null -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_double_check)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
+            else -> {
+                binding.ivReadReceipt.setImageResource(R.drawable.ic_check)
+                binding.ivReadReceipt.visibility = View.VISIBLE
+            }
         }
-        binding.ivReadReceipt.visibility = View.VISIBLE
 
         binding.tvReplyPreview.visibility = if (message.replyTo != null) View.VISIBLE else View.GONE
         binding.tvReplyPreview.text = if (message.replyTo != null) "Respondiendo" else ""
@@ -86,7 +107,7 @@ class ChatAdapter(
         binding.root.setOnLongClickListener { onMessageLongClick(message, binding.root); true }
     }
 
-    private fun bindReceivedText(binding: ItemMessageReceivedBinding, message: Message) {
+    private fun bindReceivedText(binding: ItemMessageReceivedBinding, message: LocalMessage) {
         binding.tvMessageContent.text = if (message.deleted) "Este mensaje fue eliminado" else message.content
         binding.tvTime.text = message.createdAt?.formatTime() ?: ""
         binding.ivReadReceipt.visibility = View.GONE
@@ -99,7 +120,7 @@ class ChatAdapter(
         binding.root.setOnLongClickListener { onMessageLongClick(message, binding.root); true }
     }
 
-    private fun bindImage(binding: ItemMessageImageBinding, message: Message) {
+    private fun bindImage(binding: ItemMessageImageBinding, message: LocalMessage) {
         binding.tvTime.text = message.createdAt?.formatTime() ?: ""
         message.mediaUrl?.let { url ->
             Glide.with(binding.root.context)

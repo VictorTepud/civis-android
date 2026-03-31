@@ -21,7 +21,8 @@ class ConversationAdapter(
 
     companion object DiffCallback : DiffUtil.ItemCallback<Conversation>() {
         override fun areItemsTheSame(a: Conversation, b: Conversation): Boolean = a.id == b.id
-        override fun areContentsTheSame(a: Conversation, b: Conversation): Boolean = a == b
+        override fun areContentsTheSame(a: Conversation, b: Conversation): Boolean =
+            a.lastMessage == b.lastMessage && a.unreadCount == b.unreadCount && a.lastMessageTime == b.lastMessageTime
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -34,7 +35,10 @@ class ConversationAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val conversation = getItem(position)
         with(holder.binding) {
-            tvName.text = conversation.name ?: "Desconocido"
+            // Nombre: usar otherUser.name o name de la conversación
+            val displayName = conversation.otherUser?.name ?: conversation.name ?: "Desconocido"
+            tvName.text = displayName
+
             tvLastMessage.text = conversation.lastMessage ?: ""
             tvTime.text = conversation.lastMessageTime?.formatDate() ?: ""
 
@@ -49,16 +53,22 @@ class ConversationAdapter(
                 tvLastMessage.setTypeface(tvLastMessage.typeface, android.graphics.Typeface.NORMAL)
             }
 
-            val avatarUrl = conversation.avatar
+            // Avatar: usar otherUser.avatar o el de la conversación
+            val avatarUrl = conversation.otherUser?.avatar
+                ?: conversation.avatar
                 ?: conversation.participants.firstOrNull()?.avatar
             if (!avatarUrl.isNullOrEmpty()) {
                 Glide.with(root.context)
                     .load(avatarUrl.toGlideUrl())
                     .placeholder(com.civis.app.R.drawable.ic_profile)
                     .into(ivAvatar)
+            } else {
+                ivAvatar.setImageResource(com.civis.app.R.drawable.ic_profile)
             }
 
-            if (conversation.online) {
+            // Online status
+            val isOnline = conversation.otherUser?.online ?: conversation.online
+            if (isOnline) {
                 viewOnlineDot.visibility = android.view.View.VISIBLE
             } else {
                 viewOnlineDot.visibility = android.view.View.GONE

@@ -1,5 +1,6 @@
 package com.civis.app.data.api
 
+import com.civis.app.config.ServerConfig
 import com.civis.app.utils.TokenManager
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
@@ -9,8 +10,6 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-
-    private const val BASE_URL = "http://10.0.2.2:3000/api/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -36,7 +35,7 @@ object ApiClient {
         .build()
 
     private val retrofit = Retrofit.Builder()
-        .baseUrl(BASE_URL)
+        .baseUrl(ServerConfig.API_URL)
         .client(okHttpClient)
         .addConverterFactory(GsonConverterFactory.create())
         .build()

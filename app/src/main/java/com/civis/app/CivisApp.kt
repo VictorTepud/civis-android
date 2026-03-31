@@ -1,6 +1,9 @@
 package com.civis.app
 
 import android.app.Application
+import com.civis.app.data.local.AppDatabase
+import com.civis.app.utils.NetworkMonitor
+import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 
@@ -9,6 +12,15 @@ class CivisApp : Application() {
     override fun onCreate() {
         super.onCreate()
         TokenManager.init(this)
+
+        // Inicializar base de datos local (Room)
+        val database = AppDatabase.getInstance(this)
+        OfflineSyncManager.init(database)
+
+        // Monitorear estado de conexión
+        NetworkMonitor.init(this)
+
+        // Conectar socket si hay sesión activa
         if (TokenManager.getInstance().isLoggedIn()) {
             SocketManager.connect()
         }
@@ -17,5 +29,6 @@ class CivisApp : Application() {
     override fun onTerminate() {
         super.onTerminate()
         SocketManager.disconnect()
+        NetworkMonitor.unregister()
     }
 }

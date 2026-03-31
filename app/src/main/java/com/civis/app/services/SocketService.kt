@@ -10,11 +10,13 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.civis.app.R
+import com.civis.app.data.local.LocalMessage
 import com.civis.app.data.model.Message
 import com.civis.app.ui.main.MainActivity
+import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
+import com.civis.app.utils.TokenManager
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import org.json.JSONObject
 
 class SocketService : Service() {
@@ -65,10 +67,21 @@ class SocketService : Service() {
     }
 
     private fun setupSocketListeners() {
-        SocketManager.on("new_message") { args ->
+        val currentUserId = TokenManager.getInstance().getUser()?.id ?: return
+
+        // Escuchar mensajes nuevos para este usuario
+        SocketManager.on("message_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
-            val message = gson.fromJson(data.toString(), Message::class.java)
-            showNotification(message)
+            try {
+                val message = gson.fromJson(data.toString(), Message::class.java)
+                // Guardar en base local para acceso offline
+                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                    OfflineSyncManager.saveReceivedMessage(message)
+                }
+                showNotification(message)
+            } catch (e: Exception) {
+                // Ignorar errores
+            }
         }
 
         SocketManager.on("incoming_call") { args ->
@@ -76,14 +89,6 @@ class SocketService : Service() {
             val type = data.optString("type", "voice")
             val callerName = data.optString("callerName", "Llamada entrante")
             showCallNotification(callerName, type)
-        }
-
-        SocketManager.on("user_typing") { args ->
-            // Handled by ChatActivity if active
-        }
-
-        SocketManager.on("message_read") { args ->
-            // Handled by ChatActivity if active
         }
 
         SocketManager.on("user_online") { _ ->
@@ -130,10 +135,9 @@ class SocketService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        SocketManager.off("new_message")
+        val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
+        SocketManager.off("message_$currentUserId")
         SocketManager.off("incoming_call")
-        SocketManager.off("user_typing")
-        SocketManager.off("message_read")
         SocketManager.off("user_online")
         SocketManager.off("user_offline")
     }

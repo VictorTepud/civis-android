@@ -65,7 +65,7 @@ fun String.toGlideUrl(): String {
     return if (this.startsWith("http://") || this.startsWith("https://")) {
         this
     } else {
-        "http://10.0.2.2:3000$this"
+        "${com.civis.app.config.ServerConfig.BASE_URL}$this"
     }
 }
 

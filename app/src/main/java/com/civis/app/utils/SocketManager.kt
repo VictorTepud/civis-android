@@ -5,11 +5,11 @@ import io.socket.client.IO
 import io.socket.client.Socket
 import org.json.JSONObject
 import java.net.URISyntaxException
+import com.civis.app.config.ServerConfig
 
 object SocketManager {
 
     private const val TAG = "SocketManager"
-    private const val SERVER_URL = "http://10.0.2.2:3000"
 
     private var socket: Socket? = null
 
@@ -17,6 +17,7 @@ object SocketManager {
         if (socket?.connected() == true) return
         try {
             val token = TokenManager.getInstance().getToken()
+            val serverUrl = ServerConfig.BASE_URL
             val opts = IO.Options().apply {
                 reconnection = true
                 reconnectionAttempts = Int.MAX_VALUE
@@ -28,7 +29,8 @@ object SocketManager {
                     this.query = "token=$token"
                 }
             }
-            socket = IO.socket(SERVER_URL, opts)
+            Log.d(TAG, "Conectando a: $serverUrl")
+            socket = IO.socket(serverUrl, opts)
 
             socket?.on(Socket.EVENT_CONNECT) {
                 Log.d(TAG, "Conectado al servidor")

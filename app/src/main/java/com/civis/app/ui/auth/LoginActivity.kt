@@ -12,6 +12,7 @@ import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -87,13 +88,32 @@ class LoginActivity : AppCompatActivity() {
                     binding.btnLogin.isEnabled = true
 
                     if (response.isSuccessful) {
-                        val authResponse = response.body()
-                        if (authResponse != null) {
-                            TokenManager.getInstance().saveToken(authResponse.token)
-                            TokenManager.getInstance().saveUser(authResponse.user)
-                            SocketManager.connect()
-                            startActivity(Intent(this@LoginActivity, MainActivity::class.java))
-                            finish()
+                        // El servidor envuelve la respuesta en { success: true, data: { token, user } }
+                        val body = response.body()
+                        val data = body?.data
+                        if (data != null) {
+                            try {
+                                // data contiene { token: "...", user: {...} }
+                                val json = Gson().toJson(data)
+                                val map = Gson().fromJson(json, Map::class.java)
+                                val token = map["token"] as? String
+                                val userJson = Gson().toJson(map["user"])
+
+                                if (token != null && userJson != null) {
+                                    val user = Gson().fromJson(userJson, com.civis.app.data.model.User::class.java)
+                                    TokenManager.getInstance().saveToken(token)
+                                    TokenManager.getInstance().saveUser(user)
+                                    SocketManager.connect()
+                                    startActivity(Intent(this@LoginActivity, MainActivity::class.java))
+                                    finish()
+                                } else {
+                                    showToast("Error al procesar respuesta del servidor")
+                                }
+                            } catch (e: Exception) {
+                                showToast("Error al procesar respuesta: ${e.message}")
+                            }
+                        } else {
+                            showToast("Respuesta vacía del servidor")
                         }
                     } else {
                         val errorBody = response.errorBody()?.string()

@@ -43,11 +43,6 @@ class ChatsFragment : Fragment() {
         loadConversations()
     }
 
-    /**
-     * Se ejecuta cada vez que el fragment vuelve a ser visible.
-     * Esto permite actualizar la lista de chats después de enviar
-     * un mensaje o volver de una conversación.
-     */
     override fun onResume() {
         super.onResume()
         loadConversations()
@@ -58,7 +53,6 @@ class ChatsFragment : Fragment() {
             onItemClick = { conversation ->
                 val intent = Intent(requireContext(), ChatActivity::class.java).apply {
                     putExtra("conversationId", conversation.id)
-                    // Soporta tanto otherUser como participants para compatibilidad
                     val otherUser = conversation.otherUser
                     val participant = conversation.participants.firstOrNull()
                     putExtra("receiverId", otherUser?.id ?: participant?.id ?: "")
@@ -85,7 +79,6 @@ class ChatsFragment : Fragment() {
 
     private fun loadConversations() {
         if (!NetworkMonitor.isConnected.value) {
-            // Sin conexión - mostrar advertencia
             binding.swipeRefreshLayout.isRefreshing = false
             return
         }
@@ -97,6 +90,8 @@ class ChatsFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
                     if (response.isSuccessful) {
+                        // Servidor envuelve: { success: true, data: [...conversations...] }
+                        // data es un array de conversaciones directamente
                         val data = response.body()?.data
                         if (data != null) {
                             val type = object : TypeToken<List<Conversation>>() {}.type

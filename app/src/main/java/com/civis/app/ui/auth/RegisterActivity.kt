@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.RegisterRequest
 import com.civis.app.databinding.ActivityRegisterBinding
@@ -12,7 +11,6 @@ import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -110,30 +108,15 @@ class RegisterActivity : AppCompatActivity() {
                     binding.btnRegister.isEnabled = true
 
                     if (response.isSuccessful) {
-                        val body = response.body()
-                        val data = body?.data
-                        if (data != null) {
-                            try {
-                                val json = Gson().toJson(data)
-                                val map = Gson().fromJson(json, Map::class.java)
-                                val token = map["token"] as? String
-                                val userJson = Gson().toJson(map["user"])
-
-                                if (token != null && userJson != null) {
-                                    val user = Gson().fromJson(userJson, com.civis.app.data.model.User::class.java)
-                                    TokenManager.getInstance().saveToken(token)
-                                    TokenManager.getInstance().saveUser(user)
-                                    SocketManager.connect()
-                                    startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
-                                    finish()
-                                } else {
-                                    showToast("Error al procesar respuesta del servidor")
-                                }
-                            } catch (e: Exception) {
-                                showToast("Error al procesar respuesta: ${e.message}")
-                            }
+                        val authResponse = response.body()
+                        if (authResponse != null && authResponse.token.isNotEmpty()) {
+                            TokenManager.getInstance().saveToken(authResponse.token)
+                            TokenManager.getInstance().saveUser(authResponse.user)
+                            SocketManager.connect()
+                            startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
+                            finish()
                         } else {
-                            showToast("Respuesta vacía del servidor")
+                            showToast("Error al procesar respuesta")
                         }
                     } else {
                         val errorBody = response.errorBody()?.string()

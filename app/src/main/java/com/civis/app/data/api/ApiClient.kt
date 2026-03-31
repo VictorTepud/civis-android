@@ -2,6 +2,8 @@ package com.civis.app.data.api
 
 import com.civis.app.config.ServerConfig
 import com.civis.app.utils.TokenManager
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.GsonBuilder
 import okhttp3.Interceptor
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -34,10 +36,16 @@ object ApiClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
+    // Gson con LOWER_CASE_WITH_UNDERSCORES: convierte automaticamente
+    // camelCase (Kotlin) <-> snake_case (JSON del servidor)
+    private val gson = GsonBuilder()
+        .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
+        .create()
+
     private val retrofit = Retrofit.Builder()
         .baseUrl(ServerConfig.API_URL)
         .client(okHttpClient)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(GsonConverterFactory.create(gson))
         .build()
 
     val authApi: AuthApi = retrofit.create(AuthApi::class.java)

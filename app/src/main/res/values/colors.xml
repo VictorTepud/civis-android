@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="civis_green">#25D366</color>
+    <color name="civis_dark_green">#128C7E</color>
+    <color name="civis_light_green">#DCF8C6</color>
+    <color name="civis_blue">#075E54</color>
+    <color name="civis_teal">#34B7F1</color>
+    <color name="sent_bubble">#DCF8C6</color>
+    <color name="received_bubble">#FFFFFF</color>
+    <color name="background">#ECE5DD</color>
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="text_primary">#212121</color>
+    <color name="text_secondary">#757575</color>
+    <color name="divider">#BDBDBD</color>
+    <color name="error_red">#E53935</color>
+    <color name="online_green">#4CAF50</color>
+    <color name="ripple_color">#4025D366</color>
+    <color name="tab_inactive">#9E9E9E</color>
+    <color name="tab_active">#25D366</color>
+    <color name="card_bg">#FFFFFF</color>
+    <color name="toolbar_bg">#075E54</color>
+    <color name="status_bar_color">#054D44</color>
+    <color name="input_bg">#FFFFFF</color>
+    <color name="chat_bg">#ECE5DD</color>
+    <color name="dark_overlay">#80000000</color>
+</resources>

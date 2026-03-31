@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Civis" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/civis_green</item>
+        <item name="colorPrimaryVariant">@color/civis_dark_green</item>
+        <item name="colorSecondary">@color/civis_teal</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">@color/status_bar_color</item>
+        <item name="android:navigationBarColor">@color/white</item>
+        <item name="android:windowBackground">@color/background</item>
+        <item name="colorSurface">@color/white</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="android:textColorPrimary">@color/text_primary</item>
+        <item name="android:textColorSecondary">@color/text_secondary</item>
+        <item name="materialButtonStyle">@style/CivisButton</item>
+    </style>
+
+    <style name="Theme.Civis.Auth" parent="Theme.Material3.Light.NoActionBar">
+        <item name="colorPrimary">@color/civis_green</item>
+        <item name="colorPrimaryVariant">@color/civis_dark_green</item>
+        <item name="android:statusBarColor">@color/civis_dark_green</item>
+        <item name="android:windowBackground">@color/white</item>
+        <item name="materialButtonStyle">@style/CivisButton</item>
+    </style>
+
+    <style name="Theme.Civis.Chat" parent="Theme.Civis">
+        <item name="android:statusBarColor">@color/toolbar_bg</item>
+    </style>
+
+    <style name="Theme.Civis.Call" parent="Theme.Material3.Light.NoActionBar">
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowBackground">@color/civis_blue</item>
+    </style>
+
+    <style name="CivisButton" parent="Widget.Material3.Button">
+        <item name="android:backgroundTint">@color/civis_green</item>
+        <item name="android:textColor">@color/white</item>
+        <item name="cornerRadius">@dimen/corner_radius_large</item>
+        <item name="android:paddingTop">@dimen/spacing_md</item>
+        <item name="android:paddingBottom">@dimen/spacing_md</item>
+    </style>
+
+    <style name="CivisButton.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/civis_green</item>
+        <item name="android:textColor">@color/civis_green</item>
+        <item name="cornerRadius">@dimen/corner_radius_large</item>
+    </style>
+
+    <style name="CivisTextInput" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxStrokeColor">@color/civis_green</item>
+        <item name="hintTextColor">@color/civis_green</item>
+    </style>
+
+    <style name="CivisToolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextColor">@color/white</item>
+        <item name="android:background">@color/toolbar_bg</item>
+    </style>
+</resources>

@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <com.google.android.material.appbar.MaterialToolbar
+        android:id="@+id/toolbar"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/toolbar_height"
+        android:background="@color/toolbar_bg"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:menu="@menu/menu_chat"
+        app:titleTextColor="@color/white" />
+
+    <LinearLayout
+        android:id="@+id/toolbarInfo"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_md"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@+id/toolbar"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/toolbar">
+
+        <TextView
+            android:id="@+id/tvOnlineStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/online"
+            android:textColor="@color/white"
+            android:textSize="@dimen/text_xs" />
+    </LinearLayout>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/recyclerViewMessages"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@color/chat_bg"
+        android:clipToPadding="false"
+        android:padding="@dimen/spacing_sm"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayoutInput"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+
+    <TextView
+        android:id="@+id/tvTypingIndicator"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/spacing_md"
+        android:layout_marginBottom="@dimen/spacing_xs"
+        android:text="@string/typing"
+        android:textColor="@color/civis_green"
+        android:textSize="@dimen/text_xs"
+        android:textStyle="italic"
+        android:visibility="gone"
+        app:layout_constraintBottom_toTopOf="@+id/linearLayoutInput"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <LinearLayout
+        android:id="@+id/linearLayoutInput"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="@color/white"
+        android:orientation="horizontal"
+        android:padding="@dimen/spacing_sm"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent">
+
+        <ImageView
+            android:id="@+id/ivAttach"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="@dimen/spacing_sm"
+            android:src="@drawable/ic_attach" />
+
+        <EditText
+            android:id="@+id/etMessage"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical"
+            android:layout_weight="1"
+            android:background="@android:color/transparent"
+            android:hint="@string/type_message"
+            android:imeOptions="actionSend"
+            android:inputType="textMultiLine"
+            android:maxLines="4"
+            android:paddingHorizontal="@dimen/spacing_sm"
+            android:textSize="@dimen/text_lg" />
+
+        <ImageView
+            android:id="@+id/btnRecord"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:padding="@dimen/spacing_sm"
+            android:src="@drawable/ic_mic" />
+
+        <com.google.android.material.floatingactionbutton.FloatingActionButton
+            android:id="@+id/btnSend"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="bottom"
+            android:layout_margin="@dimen/spacing_xs"
+            android:src="@drawable/ic_send"
+            android:visibility="gone"
+            app:backgroundTint="@color/civis_green"
+            app:fabCustomSize="40dp"
+            app:tint="@color/white" />
+
+    </LinearLayout>
+
+    <include
+        android:id="@+id/replyPreview"
+        layout="@layout/item_reply_preview"
+        android:visibility="gone" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

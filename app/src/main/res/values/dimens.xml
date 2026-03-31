@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="spacing_xs">4dp</dimen>
+    <dimen name="spacing_sm">8dp</dimen>
+    <dimen name="spacing_md">16dp</dimen>
+    <dimen name="spacing_lg">24dp</dimen>
+    <dimen name="spacing_xl">32dp</dimen>
+
+    <dimen name="text_xs">10sp</dimen>
+    <dimen name="text_sm">12sp</dimen>
+    <dimen name="text_md">14sp</dimen>
+    <dimen name="text_lg">16sp</dimen>
+    <dimen name="text_xl">18sp</dimen>
+    <dimen name="text_xxl">20sp</dimen>
+    <dimen name="text_title">24sp</dimen>
+
+    <dimen name="avatar_small">36dp</dimen>
+    <dimen name="avatar_medium">48dp</dimen>
+    <dimen name="avatar_large">64dp</dimen>
+    <dimen name="avatar_xlarge">96dp</dimen>
+    <dimen name="avatar_call">120dp</dimen>
+
+    <dimen name="corner_radius">8dp</dimen>
+    <dimen name="corner_radius_large">16dp</dimen>
+    <dimen name="corner_radius_xlarge">24dp</dimen>
+
+    <dimen name="bubble_max_width">280dp</dimen>
+    <dimen name="image_max_width">250dp</dimen>
+    <dimen name="image_max_height">250dp</dimen>
+
+    <dimen name="status_circle_border">3dp</dimen>
+    <dimen name="online_dot_size">12dp</dimen>
+
+    <dimen name="fab_margin">16dp</dimen>
+    <dimen name="toolbar_height">56dp</dimen>
+
+    <dimen name="unread_badge_size">20dp</dimen>
+    <dimen name="unread_badge_text">11sp</dimen>
+
+    <dimen name="color_picker_size">32dp</dimen>
+    <dimen name="color_picker_spacing">12dp</dimen>
+
+    <dimen name="input_height">48dp</dimen>
+    <dimen name="bottom_nav_height">56dp</dimen>
+
+    <dimen name="progress_bar_height">3dp</dimen>
+</resources>

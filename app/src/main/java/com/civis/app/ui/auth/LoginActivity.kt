@@ -1,18 +1,18 @@
 package com.civis.app.ui.auth
 
 import android.content.Intent
-import android.os.Bundle
 import android.util.Log
+import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.LoginRequest
+import com.civis.app.data.model.User
 import com.civis.app.databinding.ActivityLoginBinding
 import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
-import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,30 +82,67 @@ class LoginActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.authApi.login(LoginRequest(email, password))
-                val rawBody = response.errorBody()?.string()
-                val rawSuccess = response.body()?.let { Gson().toJson(it) }
+                // Usar OkHttp directamente para ver la respuesta raw
+                val client = okhttp3.OkHttpClient.Builder().build()
+                val json = """{"email":"$email","password":"$password"}""".trimIndent()
+                val body = okhttp3.RequestBody.create(
+                    okhttp3.MediaType.parse("application/json"), json
+                )
+                val baseUrl = com.civis.app.config.ServerConfig.API_URL
+                val request = okhttp3.Request.Builder()
+                    .url("$baseUrl/auth/login")
+                    .post(body)
+                    .build()
 
-                Log.d("LoginActivity", "Code: ${response.code()}, Body: $rawSuccess, Error: $rawBody")
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
+
+                Log.d("LoginActivity", "Response: $responseBody")
+
+                // Parsear manualmente: { success: true, data: { token, user } }
+                val jsonObj = org.json.JSONObject(responseBody)
+                val success = jsonObj.optBoolean("success", false)
+                val data = jsonObj.optJSONObject("data")
 
                 withContext(Dispatchers.Main) {
                     binding.progressBar.gone()
                     binding.btnLogin.isEnabled = true
 
-                    if (response.isSuccessful && response.body() != null) {
-                        val authResponse = response.body()!!
-                        if (authResponse.token.isNotEmpty() && authResponse.user.id.isNotEmpty()) {
-                            TokenManager.getInstance().saveToken(authResponse.token)
-                            TokenManager.getInstance().saveUser(authResponse.user)
+                    if (success && data != null) {
+                        val token = data.optString("token", "")
+                        val userObj = data.optJSONObject("user")
+
+                        if (token.isNotEmpty() && userObj != null) {
+                            val userId = userObj.optString("id", "")
+                            val userName = userObj.optString("name", "")
+                            val userEmail = userObj.optString("email", "")
+                            val userPhone = userObj.optString("phone", "")
+                            val userAvatar = userObj.optString("avatar", "")
+                            val userBio = userObj.optString("bio", "")
+
+                            val user = User(
+                                id = userId,
+                                email = userEmail,
+                                name = userName,
+                                phone = userPhone,
+                                avatar = userAvatar,
+                                bio = userBio
+                            )
+
+                            Log.d("LoginActivity", "Login OK: user=${userName}, id=${userId}, token=${token.take(20)}...")
+
+                            TokenManager.getInstance().saveToken(token)
+                            TokenManager.getInstance().saveUser(user)
                             SocketManager.connect()
                             startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                             finish()
                         } else {
-                            Log.e("LoginActivity", "token vacío o user sin id. rawBody=$rawSuccess")
+                            Log.e("LoginActivity", "token o user vacíos en data")
                             showToast("Error: respuesta inesperada del servidor")
                         }
                     } else {
-                        showToast("Error: ${rawBody ?: "Credenciales incorrectas"}")
+                        val errorMsg = jsonObj.optString("message", "Credenciales incorrectas")
+                        showToast("Error: $errorMsg")
                     }
                 }
             } catch (e: Exception) {

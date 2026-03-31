@@ -86,25 +86,44 @@ class ChatsFragment : Fragment() {
         binding.swipeRefreshLayout.isRefreshing = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.messagesApi.getConversations()
-                withContext(Dispatchers.Main) {
-                    binding.swipeRefreshLayout.isRefreshing = false
-                    if (response.isSuccessful) {
-                        // Servidor envuelve: { success: true, data: [...conversations...] }
-                        // data es un array de conversaciones directamente
-                        val data = response.body()?.data
-                        if (data != null) {
-                            val type = object : TypeToken<List<Conversation>>() {}.type
-                            val list: List<Conversation> = Gson().fromJson(Gson().toJson(data), type)
-                            conversations.clear()
-                            conversations.addAll(list)
+                // Usar OkHttp directo para evitar problemas de parseo con Gson
+                val token = com.civis.app.utils.TokenManager.getInstance().getToken() ?: ""
+                val client = okhttp3.OkHttpClient.Builder().build()
+                val request = okhttp3.Request.Builder()
+                    .url("${com.civis.app.config.ServerConfig.API_URL}messages/conversations")
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
+
+                if (response.isSuccessful) {
+                    // Respuesta: { success: true, data: [{...}, ...] }
+                    val jsonObj = org.json.JSONObject(responseBody)
+                    val data = jsonObj.optJSONArray("data")
+
+                    if (data != null) {
+                        val type = object : TypeToken<List<Conversation>>() {}.type
+                        val list: List<Conversation> = Gson().fromJson(data.toString(), type)
+                        conversations.clear()
+                        conversations.addAll(list)
+                        withContext(Dispatchers.Main) {
                             adapter.submitList(conversations.toList())
+                            binding.swipeRefreshLayout.isRefreshing = false
                         }
                     } else {
+                        withContext(Dispatchers.Main) {
+                            binding.swipeRefreshLayout.isRefreshing = false
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        binding.swipeRefreshLayout.isRefreshing = false
                         requireContext().showToast("Error al cargar conversaciones")
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ChatsFragment", "Error: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
                     requireContext().showToast("Error de conexión")

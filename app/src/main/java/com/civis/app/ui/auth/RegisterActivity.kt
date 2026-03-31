@@ -1,11 +1,13 @@
 package com.civis.app.ui.auth
 
 import android.content.Intent
+import android.util.Log
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.RegisterRequest
+import com.civis.app.data.model.User
 import com.civis.app.databinding.ActivityRegisterBinding
 import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.SocketManager
@@ -96,22 +98,46 @@ class RegisterActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val request = RegisterRequest(
-                    email = email,
-                    password = password,
-                    name = name,
-                    phone = phone
+                val client = okhttp3.OkHttpClient.Builder().build()
+                val json = """{"email":"$email","password":"$password","name":"$name","phone":"$phone"}""".trimIndent()
+                val body = okhttp3.RequestBody.create(
+                    okhttp3.MediaType.parse("application/json"), json
                 )
-                val response = ApiClient.authApi.register(request)
+                val baseUrl = com.civis.app.config.ServerConfig.API_URL
+                val request = okhttp3.Request.Builder()
+                    .url("$baseUrl/auth/register")
+                    .post(body)
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
+
+                Log.d("RegisterActivity", "Response: $responseBody")
+
+                val jsonObj = org.json.JSONObject(responseBody)
+                val success = jsonObj.optBoolean("success", false)
+                val data = jsonObj.optJSONObject("data")
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.gone()
                     binding.btnRegister.isEnabled = true
 
-                    if (response.isSuccessful) {
-                        val authResponse = response.body()
-                        if (authResponse != null && authResponse.token.isNotEmpty()) {
-                            TokenManager.getInstance().saveToken(authResponse.token)
-                            TokenManager.getInstance().saveUser(authResponse.user)
+                    if (success && data != null) {
+                        val token = data.optString("token", "")
+                        val userObj = data.optJSONObject("user")
+
+                        if (token.isNotEmpty() && userObj != null) {
+                            val user = User(
+                                id = userObj.optString("id", ""),
+                                email = userObj.optString("email", ""),
+                                name = userObj.optString("name", ""),
+                                phone = userObj.optString("phone", ""),
+                                avatar = userObj.optString("avatar", ""),
+                                bio = userObj.optString("bio", "")
+                            )
+
+                            TokenManager.getInstance().saveToken(token)
+                            TokenManager.getInstance().saveUser(user)
                             SocketManager.connect()
                             startActivity(Intent(this@RegisterActivity, MainActivity::class.java))
                             finish()
@@ -119,11 +145,12 @@ class RegisterActivity : AppCompatActivity() {
                             showToast("Error al procesar respuesta")
                         }
                     } else {
-                        val errorBody = response.errorBody()?.string()
-                        showToast("Error: ${errorBody ?: "No se pudo registrar"}")
+                        val errorMsg = jsonObj.optString("message", "No se pudo registrar")
+                        showToast("Error: $errorMsg")
                     }
                 }
             } catch (e: Exception) {
+                Log.e("RegisterActivity", "Excepción: ${e.javaClass.simpleName}: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.progressBar.gone()
                     binding.btnRegister.isEnabled = true

@@ -8,15 +8,14 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.civis.app.data.api.ApiClient
+import com.civis.app.data.local.LocalDatabase
 import com.civis.app.data.model.Conversation
 import com.civis.app.databinding.FragmentChatsBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.contacts.AddContactActivity
 import com.civis.app.utils.NetworkMonitor
+import com.civis.app.utils.appGson
 import com.civis.app.utils.showToast
-import com.google.gson.FieldNamingPolicy
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -80,16 +79,19 @@ class ChatsFragment : Fragment() {
     }
 
     private fun loadConversations() {
-        if (!NetworkMonitor.isConnected.value) {
-            binding.swipeRefreshLayout.isRefreshing = false
-            return
-        }
-
         binding.swipeRefreshLayout.isRefreshing = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Usar OkHttp directo para evitar problemas de parseo con Gson
                 val token = com.civis.app.utils.TokenManager.getInstance().getToken() ?: ""
+
+                if (token.isEmpty() || !NetworkMonitor.isConnected.value) {
+                    // Sin token o sin conexión → mostrar vacío, SIN toast de error
+                    withContext(Dispatchers.Main) {
+                        binding.swipeRefreshLayout.isRefreshing = false
+                    }
+                    return@launch
+                }
+
                 val client = okhttp3.OkHttpClient.Builder().build()
                 val request = okhttp3.Request.Builder()
                     .url("${com.civis.app.config.ServerConfig.API_URL}messages/conversations")
@@ -100,14 +102,12 @@ class ChatsFragment : Fragment() {
                 val responseBody = response.body?.string() ?: ""
 
                 if (response.isSuccessful) {
-                    // Respuesta: { success: true, data: [{...}, ...] }
                     val jsonObj = org.json.JSONObject(responseBody)
                     val data = jsonObj.optJSONArray("data")
 
                     if (data != null) {
                         val type = object : TypeToken<List<Conversation>>() {}.type
-                        val gson = GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
-                        val list: List<Conversation> = gson.fromJson(data.toString(), type)
+                        val list: List<Conversation> = appGson.fromJson(data.toString(), type)
                         conversations.clear()
                         conversations.addAll(list)
                         withContext(Dispatchers.Main) {
@@ -122,14 +122,16 @@ class ChatsFragment : Fragment() {
                 } else {
                     withContext(Dispatchers.Main) {
                         binding.swipeRefreshLayout.isRefreshing = false
-                        requireContext().showToast("Error al cargar conversaciones")
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("ChatsFragment", "Error: ${e.message}", e)
+                android.util.Log.e("ChatsFragment", "Error cargando conversaciones: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
-                    requireContext().showToast("Error de conexión")
+                    // Solo mostrar toast si es un error de servidor (no de red al inicio)
+                    if (NetworkMonitor.isConnected.value) {
+                        requireContext().showToast("Error al cargar conversaciones")
+                    }
                 }
             }
         }

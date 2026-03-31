@@ -10,8 +10,10 @@ import com.civis.app.data.model.AddContactRequest
 import com.civis.app.data.model.User
 import com.civis.app.databinding.ActivityAddContactBinding
 import com.civis.app.ui.chat.ChatActivity
+import com.civis.app.utils.NetworkMonitor
+import com.civis.app.utils.appGson
 import com.civis.app.utils.showToast
-import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -66,6 +68,11 @@ class AddContactActivity : AppCompatActivity() {
         binding.recyclerViewResults.adapter = adapter
     }
 
+    /**
+     * Busca un usuario por email usando el endpoint de búsqueda del servidor.
+     * Primero intenta POST /contacts/add (que busca y agrega directamente),
+     * si el usuario ya existe contacta muestra un toast informativo.
+     */
     private fun searchUser() {
         val email = binding.etEmail.text.toString().trim()
         if (email.isEmpty()) {
@@ -81,37 +88,91 @@ class AddContactActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val response = ApiClient.contactsApi.getContacts()
+                // Usar el endpoint de búsqueda de usuarios
+                val token = com.civis.app.utils.TokenManager.getInstance().getToken() ?: ""
+                val client = okhttp3.OkHttpClient.Builder().build()
+                val request = okhttp3.Request.Builder()
+                    .url("${com.civis.app.config.ServerConfig.API_URL}search/users?q=${java.net.URLEncoder.encode(email, "UTF-8")}")
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
+
+                val response = client.newCall(request).execute()
+                val responseBody = response.body?.string() ?: ""
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
-                    if (response.isSuccessful) {
-                        val adapter = binding.recyclerViewResults.adapter as? UserSearchAdapter
-                        adapter?.submitList(emptyList())
-                        showToast("Búsqueda realizada. Agrega el contacto con su ID.")
+                }
+
+                if (response.isSuccessful) {
+                    val jsonObj = org.json.JSONObject(responseBody)
+                    val data = jsonObj.optJSONObject("data")
+                    val usersArr = data?.optJSONArray("users") ?: jsonObj.optJSONArray("data")
+
+                    if (usersArr != null && usersArr.length() > 0) {
+                        val type = object : TypeToken<List<User>>() {}.type
+                        val users: List<User> = appGson.fromJson(usersArr.toString(), type)
+                        searchResults.clear()
+
+                        // Filtrar solo el que coincide con el email exacto
+                        val exact = users.filter { it.email.equals(email, ignoreCase = true) }
+                        searchResults.addAll(if (exact.isNotEmpty()) exact else users)
+
+                        withContext(Dispatchers.Main) {
+                            val adapter = binding.recyclerViewResults.adapter as? UserSearchAdapter
+                            adapter?.submitList(searchResults)
+                            if (searchResults.isEmpty()) {
+                                showToast("No se encontró ningún usuario con ese correo")
+                            }
+                        }
+                    } else {
+                        withContext(Dispatchers.Main) {
+                            val adapter = binding.recyclerViewResults.adapter as? UserSearchAdapter
+                            adapter?.submitList(emptyList())
+                            showToast("No se encontró ningún usuario con ese correo")
+                        }
+                    }
+                } else {
+                    withContext(Dispatchers.Main) {
+                        showToast("Error al buscar usuario")
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("AddContact", "Error: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
-                    showToast("Error de conexión")
+                    if (NetworkMonitor.isConnected.value) {
+                        showToast("Error al buscar usuario")
+                    } else {
+                        showToast("Sin conexión")
+                    }
                 }
             }
         }
     }
 
     private fun addContact(userId: String) {
+        binding.progressBar.visibility = View.VISIBLE
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = ApiClient.contactsApi.addContact(AddContactRequest(userId = userId))
                 withContext(Dispatchers.Main) {
+                    binding.progressBar.visibility = View.GONE
                     if (response.isSuccessful) {
-                        showToast("Contacto agregado")
+                        showToast("Contacto agregado correctamente")
                     } else {
                         showToast("Error al agregar contacto")
                     }
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { showToast("Error de conexión") }
+                withContext(Dispatchers.Main) {
+                    binding.progressBar.visibility = View.GONE
+                    if (NetworkMonitor.isConnected.value) {
+                        showToast("Error al agregar contacto")
+                    } else {
+                        showToast("Sin conexión")
+                    }
+                }
             }
         }
     }

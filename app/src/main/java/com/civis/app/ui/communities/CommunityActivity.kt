@@ -4,7 +4,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.Community
@@ -83,7 +82,6 @@ class CommunityActivity : AppCompatActivity() {
                 .into(binding.ivCover)
         }
 
-        binding.recyclerViewChannels.layoutManager = LinearLayoutManager(this)
         binding.recyclerViewChannels.adapter = ChannelAdapter(
             onItemClick = { channel ->
                 val intent = Intent(this, ChannelChatActivity::class.java).apply {

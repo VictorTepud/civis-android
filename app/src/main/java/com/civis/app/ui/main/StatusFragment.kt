@@ -75,12 +75,12 @@ class StatusFragment : Fragment() {
                             adapter.submitList(statuses)
                         }
                     } else {
-                        showToast("Error al cargar estados")
+                        requireContext().showToast("Error al cargar estados")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    showToast("Error de conexión")
+                    requireContext().showToast("Error de conexión")
                 }
             }
         }

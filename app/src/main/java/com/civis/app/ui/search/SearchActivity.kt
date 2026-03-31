@@ -2,18 +2,16 @@ package com.civis.app.ui.search
 
 import android.os.Bundle
 import android.view.View
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentManager
-import androidx.fragment.app.FragmentPagerAdapter
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.viewpager2.widget.ViewPager2
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.Message
 import com.civis.app.data.model.User
 import com.civis.app.databinding.ActivitySearchBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.utils.showToast
+import androidx.fragment.app.Fragment
+import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -51,9 +49,11 @@ class SearchActivity : AppCompatActivity() {
     }
 
     private fun setupViewPager() {
-        val adapter = SearchPagerAdapter(supportFragmentManager)
+        val adapter = SearchPagerAdapter(this)
         binding.viewPager.adapter = adapter
-        binding.tabLayout.setupWithViewPager(binding.viewPager)
+        com.google.android.material.tabs.TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
+            tab.text = adapter.titles[position]
+        }.attach()
     }
 
     private fun performSearch(query: String) {
@@ -88,10 +88,9 @@ class SearchActivity : AppCompatActivity() {
     }
 }
 
-class SearchPagerAdapter(fm: FragmentManager) : FragmentPagerAdapter(fm, BEHAVIOR_RESUME_ONLY_CURRENT_FRAGMENT) {
-    private val titles = arrayOf("Mensajes", "Contactos", "Grupos")
+class SearchPagerAdapter(activity: AppCompatActivity) : FragmentStateAdapter(activity) {
+    val titles = arrayOf("Mensajes", "Contactos", "Grupos")
 
-    override fun getCount(): Int = titles.size
-    override fun getPageTitle(position: Int): CharSequence = titles[position]
-    override fun getItem(position: Int): Fragment = Fragment()
+    override fun getItemCount(): Int = titles.size
+    override fun createFragment(position: Int): Fragment = Fragment()
 }

@@ -73,12 +73,12 @@ class CommunitiesFragment : Fragment() {
                             adapter.submitList(communities)
                         }
                     } else {
-                        showToast("Error al cargar comunidades")
+                        requireContext().showToast("Error al cargar comunidades")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    showToast("Error de conexión")
+                    requireContext().showToast("Error de conexión")
                 }
             }
         }

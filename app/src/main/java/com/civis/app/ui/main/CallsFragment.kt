@@ -60,12 +60,12 @@ class CallsFragment : Fragment() {
                             adapter.submitList(calls)
                         }
                     } else {
-                        showToast("Error al cargar historial de llamadas")
+                        requireContext().showToast("Error al cargar historial de llamadas")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
-                    showToast("Error de conexión")
+                    requireContext().showToast("Error de conexión")
                 }
             }
         }

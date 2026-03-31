@@ -5,6 +5,9 @@ import android.view.MotionEvent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.viewpager2.widget.ViewPager2
 import com.civis.app.databinding.ActivityViewStatusBinding
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class ViewStatusActivity : AppCompatActivity() {
 

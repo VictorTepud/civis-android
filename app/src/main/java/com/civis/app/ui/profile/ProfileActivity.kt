@@ -19,6 +19,8 @@ import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
 import com.civis.app.utils.toGlideUrl
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -129,10 +131,8 @@ class ProfileActivity : AppCompatActivity() {
                 var avatarUrl: String? = null
                 if (selectedAvatarUri != null) {
                     val file = java.io.File(selectedAvatarUri!!.path ?: return@launch)
-                    val requestFile = okhttp3.RequestBody.create(
-                        okhttp3.MediaType.parse(contentResolver.getType(selectedAvatarUri!!) ?: "image/*"),
-                        file
-                    )
+                    val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/*").toMediaType()
+                    val requestFile = file.asRequestBody(mediaType)
                     val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)
                     if (uploadResponse.isSuccessful) {

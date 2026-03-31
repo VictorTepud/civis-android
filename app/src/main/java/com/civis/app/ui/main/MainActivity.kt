@@ -7,8 +7,6 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.civis.app.R
 import com.civis.app.databinding.ActivityMainBinding
-import com.google.android.material.tabs.TabLayout
-import com.google.android.material.tabs.TabLayoutMediator
 
 class MainActivity : AppCompatActivity() {
 
@@ -42,11 +40,6 @@ class MainActivity : AppCompatActivity() {
         val adapter = ViewPagerAdapter(this, fragments)
         binding.viewPager.adapter = adapter
         binding.viewPager.offscreenPageLimit = 5
-
-        TabLayoutMediator(binding.tabLayout, binding.viewPager) { tab, position ->
-            tab.text = tabTitles[position]
-            tab.setIcon(tabIcons[position])
-        }.attach()
     }
 
     private fun setupBottomNav() {

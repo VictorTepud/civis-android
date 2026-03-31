@@ -39,7 +39,7 @@ class StatusPagerAdapter(
                     progressBar.progress = progress
                     if (progress >= 100) {
                         if (position < statusIds.size - 1) {
-                            (itemView.parent as? ViewPager2)?.setCurrentItem(position + 1, true)
+                            (root.parent as? ViewPager2)?.setCurrentItem(position + 1, true)
                         } else {
                             onComplete()
                         }
@@ -50,7 +50,7 @@ class StatusPagerAdapter(
             }
             handler.postDelayed(runnable, 100)
 
-            itemView.tag = handler
+            root.tag = handler
         }
     }
 

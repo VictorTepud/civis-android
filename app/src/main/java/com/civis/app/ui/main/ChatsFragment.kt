@@ -55,7 +55,7 @@ class ChatsFragment : Fragment() {
                 startActivity(intent)
             },
             onLongClick = { conversation ->
-                conversation.name?.let { showToast("$it: Silenciar, Bloquear, Eliminar") }
+                conversation.name?.let { requireContext().showToast("$it: Silenciar, Bloquear, Eliminar") }
             }
         )
         binding.recyclerViewChats.layoutManager = LinearLayoutManager(requireContext())
@@ -86,13 +86,13 @@ class ChatsFragment : Fragment() {
                             adapter.submitList(conversations)
                         }
                     } else {
-                        showToast("Error al cargar conversaciones")
+                        requireContext().showToast("Error al cargar conversaciones")
                     }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
-                    showToast("Error de conexión")
+                    requireContext().showToast("Error de conexión")
                 }
             }
         }

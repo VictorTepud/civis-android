@@ -10,10 +10,13 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.CreateStatusRequest
 import com.civis.app.databinding.ActivityCreateStatusBinding
 import com.civis.app.utils.showToast
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -82,12 +85,12 @@ class CreateStatusActivity : AppCompatActivity() {
         binding.toggleType.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) {
                 when (checkedId) {
-                    com.google.android.material.R.id.btn1 -> {
+                    R.id.btnText -> {
                         statusType = "text"
                         binding.etStatusContent.visibility = View.VISIBLE
                         binding.ivPreviewImage.visibility = View.GONE
                     }
-                    com.google.android.material.R.id.btn2 -> {
+                    R.id.btnImage -> {
                         statusType = "image"
                         binding.etStatusContent.visibility = View.GONE
                         binding.btnPickImage.performClick()
@@ -128,10 +131,8 @@ class CreateStatusActivity : AppCompatActivity() {
                 var mediaUrl: String? = null
                 if (statusType == "image" && selectedImageUri != null) {
                     val file = java.io.File(selectedImageUri!!.path ?: return@launch)
-                    val requestFile = okhttp3.RequestBody.create(
-                        okhttp3.MediaType.parse(contentResolver.getType(selectedImageUri!!) ?: "image/*"),
-                        file
-                    )
+                    val mediaType = (contentResolver.getType(selectedImageUri!!) ?: "image/*").toMediaType()
+                    val requestFile = file.asRequestBody(mediaType)
                     val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadStatus(body)
                     if (uploadResponse.isSuccessful) {

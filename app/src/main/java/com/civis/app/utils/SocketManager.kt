@@ -43,12 +43,12 @@ object SocketManager {
                 Log.e(TAG, "Error de conexión: ${args.joinToString()}")
             }
 
-            socket?.on(Socket.EVENT_RECONNECT) { args ->
+            socket?.on("reconnect") { args ->
                 Log.d(TAG, "Reconectado: ${args.joinToString()}")
                 emit("user_online", null)
             }
 
-            socket?.on(Socket.EVENT_RECONNECT_ERROR) { args ->
+            socket?.on("reconnect_error") { args ->
                 Log.e(TAG, "Error de reconexión: ${args.joinToString()}")
             }
 

@@ -23,6 +23,8 @@ import com.civis.app.utils.visible
 import com.civis.app.utils.gone
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -265,10 +267,8 @@ class ChatActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val file = java.io.File(uri.path ?: return@launch)
-                val requestFile = okhttp3.RequestBody.create(
-                    okhttp3.MediaType.parse(contentResolver.getType(uri) ?: "image/*"),
-                    file
-                )
+                val mediaType = (contentResolver.getType(uri) ?: "image/*").toMediaType()
+                val requestFile = file.asRequestBody(mediaType)
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {

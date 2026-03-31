@@ -19,6 +19,8 @@ import com.civis.app.data.model.SendMessageRequest
 import com.civis.app.databinding.ActivityChatBinding
 import com.civis.app.ui.calls.CallActivity
 import com.civis.app.utils.NetworkMonitor
+import okhttp3.MediaType.Companion.toMediaType
+import okhttp3.RequestBody.Companion.asRequestBody
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
@@ -278,8 +280,9 @@ class ChatActivity : AppCompatActivity() {
                 }
                 inputStream.close()
 
-                val mediaType = okhttp3.MediaType.parse(contentResolver.getType(uri) ?: "image/*") ?: okhttp3.MediaType.parse("image/*")!!
-                val requestFile = okhttp3.RequestBody.create(mediaType, file)
+                val mediaTypeStr = contentResolver.getType(uri) ?: "image/*"
+                val mediaType = mediaTypeStr.toMediaType()
+                val requestFile = file.asRequestBody(mediaType)
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
@@ -455,7 +458,7 @@ class ChatActivity : AppCompatActivity() {
                 if (NetworkMonitor.isConnected.value) {
                     val response = ApiClient.messagesApi.deleteMessage(messageId)
                     if (response.isSuccessful) {
-                        OfflineSyncManager.db?.messageDao()?.softDelete(messageId)
+                        OfflineSyncManager.db?.softDelete(messageId)
                         withContext(Dispatchers.Main) {
                             val index = messages.indexOfFirst { it.id == messageId }
                             if (index >= 0) {
@@ -466,7 +469,7 @@ class ChatActivity : AppCompatActivity() {
                     }
                 } else {
                     // Sin conexión - eliminar solo localmente
-                    OfflineSyncManager.db?.messageDao()?.softDelete(messageId)
+                    OfflineSyncManager.db?.softDelete(messageId)
                     withContext(Dispatchers.Main) {
                         val index = messages.indexOfFirst { it.id == messageId }
                         if (index >= 0) {
@@ -578,7 +581,7 @@ class ChatActivity : AppCompatActivity() {
             read = localMsg.read,
             deleted = localMsg.deleted,
             createdAt = localMsg.createdAt,
-            sender = User(name = localMsg.senderName, avatar = localMsg.senderAvatar)
+            sender = com.civis.app.data.model.User(name = localMsg.senderName, avatar = localMsg.senderAvatar)
         )
     }
 

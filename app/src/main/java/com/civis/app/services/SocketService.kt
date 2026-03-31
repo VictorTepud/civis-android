@@ -10,13 +10,15 @@ import android.os.Build
 import android.os.IBinder
 import androidx.core.app.NotificationCompat
 import com.civis.app.R
-import com.civis.app.data.local.LocalMessage
 import com.civis.app.data.model.Message
 import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.google.gson.Gson
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import org.json.JSONObject
 
 class SocketService : Service() {
@@ -69,13 +71,11 @@ class SocketService : Service() {
     private fun setupSocketListeners() {
         val currentUserId = TokenManager.getInstance().getUser()?.id ?: return
 
-        // Escuchar mensajes nuevos para este usuario
         SocketManager.on("message_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
             try {
                 val message = gson.fromJson(data.toString(), Message::class.java)
-                // Guardar en base local para acceso offline
-                kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                CoroutineScope(Dispatchers.IO).launch {
                     OfflineSyncManager.saveReceivedMessage(message)
                 }
                 showNotification(message)
@@ -89,14 +89,6 @@ class SocketService : Service() {
             val type = data.optString("type", "voice")
             val callerName = data.optString("callerName", "Llamada entrante")
             showCallNotification(callerName, type)
-        }
-
-        SocketManager.on("user_online") { _ ->
-            // Update presence
-        }
-
-        SocketManager.on("user_offline") { _ ->
-            // Update presence
         }
     }
 
@@ -138,7 +130,5 @@ class SocketService : Service() {
         val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
         SocketManager.off("message_$currentUserId")
         SocketManager.off("incoming_call")
-        SocketManager.off("user_online")
-        SocketManager.off("user_offline")
     }
 }

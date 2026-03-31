@@ -14,7 +14,9 @@ import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.contacts.AddContactActivity
 import com.civis.app.utils.NetworkMonitor
 import com.civis.app.utils.showToast
+import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -104,7 +106,8 @@ class ChatsFragment : Fragment() {
 
                     if (data != null) {
                         val type = object : TypeToken<List<Conversation>>() {}.type
-                        val list: List<Conversation> = Gson().fromJson(data.toString(), type)
+                        val gson = GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
+                        val list: List<Conversation> = gson.fromJson(data.toString(), type)
                         conversations.clear()
                         conversations.addAll(list)
                         withContext(Dispatchers.Main) {

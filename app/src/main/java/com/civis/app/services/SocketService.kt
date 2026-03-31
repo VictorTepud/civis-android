@@ -15,6 +15,7 @@ import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -23,7 +24,7 @@ import org.json.JSONObject
 
 class SocketService : Service() {
 
-    private val gson = Gson()
+    private val gson = appGson
     private val NOTIFICATION_ID = 1001
     private val CHANNEL_ID = "civis_socket_channel"
 

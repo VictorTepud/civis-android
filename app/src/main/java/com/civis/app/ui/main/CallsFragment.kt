@@ -11,6 +11,7 @@ import com.civis.app.data.model.Call
 import com.civis.app.databinding.FragmentCallsBinding
 import com.civis.app.utils.formatDate
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -54,7 +55,7 @@ class CallsFragment : Fragment() {
                         val data = response.body()?.data
                         if (data != null) {
                             val type = object : TypeToken<List<Call>>() {}.type
-                            val list: List<Call> = Gson().fromJson(Gson().toJson(data), type)
+                            val list: List<Call> = appGson.fromJson(appGson.toJson(data), type)
                             calls.clear()
                             calls.addAll(list)
                             adapter.submitList(calls)

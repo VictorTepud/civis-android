@@ -104,5 +104,5 @@ object SocketManager {
         return socket
     }
 
-    private val gson = com.google.gson.Gson()
+    private val gson = appGson
 }

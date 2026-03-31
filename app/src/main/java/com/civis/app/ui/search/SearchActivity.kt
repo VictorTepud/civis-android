@@ -10,6 +10,7 @@ import com.civis.app.data.model.User
 import com.civis.app.databinding.ActivitySearchBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import androidx.fragment.app.Fragment
 import androidx.viewpager2.adapter.FragmentStateAdapter
 import com.google.gson.Gson
@@ -72,7 +73,7 @@ class SearchActivity : AppCompatActivity() {
                             val type = object : TypeToken<List<Message>>() {}.type
                             searchMessages.clear()
                             searchMessages.addAll(
-                                Gson().fromJson<List<Message>>(Gson().toJson(data), type)
+                                appGson.fromJson<List<Message>>(appGson.toJson(data), type)
                                     .filter { it.content?.contains(query, true) == true }
                             )
                         }

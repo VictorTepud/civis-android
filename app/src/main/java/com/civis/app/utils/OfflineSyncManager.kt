@@ -86,7 +86,7 @@ object OfflineSyncManager {
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null) {
-                        val msg = Gson().fromJson(Gson().toJson(data), Message::class.java)
+                        val msg = appGson.fromJson(appGson.toJson(data), Message::class.java)
                         val localMsg = toLocalMessage(msg, "sent")
                         database.insertMessage(localMsg)
                         return msg
@@ -165,7 +165,7 @@ object OfflineSyncManager {
                     if (response.isSuccessful) {
                         val data = response.body()?.data
                         if (data != null) {
-                            val serverMsg = Gson().fromJson(Gson().toJson(data), Message::class.java)
+                            val serverMsg = appGson.fromJson(appGson.toJson(data), Message::class.java)
                             database.softDelete(msg.id)
                             database.insertMessage(toLocalMessage(serverMsg, "sent"))
                             Log.d(TAG, "Mensaje sincronizado: ${serverMsg.id}")
@@ -197,7 +197,7 @@ object OfflineSyncManager {
                     val data = response.body()?.data
                     if (data != null) {
                         val type = object : TypeToken<List<Message>>() {}.type
-                        val serverMessages: List<Message> = Gson().fromJson(Gson().toJson(data), type)
+                        val serverMessages: List<Message> = appGson.fromJson(appGson.toJson(data), type)
                         val pending = database.getPendingMessages()
                         val serverIds = serverMessages.map { it.id }.toSet()
                         val localToKeep = pending.filter { it.id !in serverIds }

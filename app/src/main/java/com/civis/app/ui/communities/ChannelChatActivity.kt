@@ -12,6 +12,7 @@ import com.civis.app.databinding.ActivityChannelChatBinding
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -68,7 +69,7 @@ class ChannelChatActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null) {
-                        val msg = Gson().fromJson(Gson().toJson(data), Message::class.java)
+                        val msg = appGson.fromJson(appGson.toJson(data), Message::class.java)
                         val localMsg = OfflineSyncManager.toLocalMessage(msg, "sent")
                         withContext(Dispatchers.Main) {
                             messages.add(localMsg)

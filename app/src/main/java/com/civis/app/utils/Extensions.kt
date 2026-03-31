@@ -4,8 +4,16 @@ import android.content.Context
 import android.view.View
 import android.widget.Toast
 import com.bumptech.glide.request.RequestOptions
+import com.google.gson.FieldNamingPolicy
+import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import java.text.SimpleDateFormat
 import java.util.*
+
+/** Gson configurado para convertir camelCase (Kotlin) <-> snake_case (JSON del servidor) */
+val appGson: Gson by lazy {
+    GsonBuilder().setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES).create()
+}
 
 fun String.formatTime(): String {
     return try {

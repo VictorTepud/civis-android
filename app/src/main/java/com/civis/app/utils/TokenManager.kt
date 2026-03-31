@@ -5,11 +5,13 @@ import android.content.SharedPreferences
 import com.civis.app.data.model.User
 import com.google.gson.Gson
 
+private val appGson: Gson = com.civis.app.utils.appGson
+
 class TokenManager private constructor(context: Context) {
 
     private val prefs: SharedPreferences =
         context.getSharedPreferences("civis_prefs", Context.MODE_PRIVATE)
-    private val gson = Gson()
+    private val gson = appGson
 
     companion object {
         @Volatile

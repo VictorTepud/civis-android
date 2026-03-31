@@ -13,6 +13,7 @@ import com.civis.app.databinding.FragmentCommunitiesBinding
 import com.civis.app.ui.communities.CommunityActivity
 import com.civis.app.ui.communities.CreateCommunityActivity
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -67,7 +68,7 @@ class CommunitiesFragment : Fragment() {
                         val data = response.body()?.data
                         if (data != null) {
                             val type = object : TypeToken<List<Community>>() {}.type
-                            val list: List<Community> = Gson().fromJson(Gson().toJson(data), type)
+                            val list: List<Community> = appGson.fromJson(appGson.toJson(data), type)
                             communities.clear()
                             communities.addAll(list)
                             adapter.submitList(communities)

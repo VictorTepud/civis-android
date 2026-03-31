@@ -16,6 +16,7 @@ import com.civis.app.services.CallService
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.showToast
 import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -82,8 +83,8 @@ class CallActivity : AppCompatActivity() {
                 withContext(Dispatchers.Main) {
                     if (response.isSuccessful) {
                         val data = response.body()?.data
-                        val json = Gson().toJson(data)
-                        val jsonObject = Gson().fromJson(json, JSONObject::class.java)
+                        val json = appGson.toJson(data)
+                        val jsonObject = appGson.fromJson(json, JSONObject::class.java)
                         callId = jsonObject.optString("id", "")
                         binding.tvCallStatus.text = "Sonando..."
                     } else {

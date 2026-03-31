@@ -11,6 +11,7 @@ import com.civis.app.data.model.Contact
 import com.civis.app.data.model.CreateGroupRequest
 import com.civis.app.databinding.ActivityCreateGroupBinding
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -67,7 +68,7 @@ class CreateGroupActivity : AppCompatActivity() {
                         val data = response.body()?.data
                         if (data != null) {
                             val type = object : TypeToken<List<Contact>>() {}.type
-                            val list: List<Contact> = Gson().fromJson(Gson().toJson(data), type)
+                            val list: List<Contact> = appGson.fromJson(appGson.toJson(data), type)
                             contacts.clear()
                             contacts.addAll(list)
                             adapter.submitList(contacts)

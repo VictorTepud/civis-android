@@ -13,6 +13,7 @@ import com.civis.app.databinding.FragmentStatusBinding
 import com.civis.app.ui.status.CreateStatusActivity
 import com.civis.app.ui.status.ViewStatusActivity
 import com.civis.app.utils.showToast
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -69,7 +70,7 @@ class StatusFragment : Fragment() {
                         val data = response.body()?.data
                         if (data != null) {
                             val type = object : TypeToken<List<Status>>() {}.type
-                            val list: List<Status> = Gson().fromJson(Gson().toJson(data), type)
+                            val list: List<Status> = appGson.fromJson(appGson.toJson(data), type)
                             statuses.clear()
                             statuses.addAll(list)
                             adapter.submitList(statuses)

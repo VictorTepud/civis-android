@@ -19,6 +19,7 @@ import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
 import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.appGson
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
 import kotlinx.coroutines.CoroutineScope
@@ -64,8 +65,8 @@ class ProfileActivity : AppCompatActivity() {
                     val response = ApiClient.usersApi.getProfile()
                     withContext(Dispatchers.Main) {
                         if (response.isSuccessful) {
-                            val user = com.google.gson.Gson().fromJson(
-                                com.google.gson.Gson().toJson(response.body()?.data),
+                            val user = appGson.fromJson(
+                                appGson.toJson(response.body()?.data),
                                 com.civis.app.data.model.User::class.java
                             )
                             binding.etName.setText(user.name)

@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.MediaType.Companion.toMediaType
 
 class LoginActivity : AppCompatActivity() {
 
@@ -86,7 +87,7 @@ class LoginActivity : AppCompatActivity() {
                 val client = okhttp3.OkHttpClient.Builder().build()
                 val json = """{"email":"$email","password":"$password"}""".trimIndent()
                 val body = okhttp3.RequestBody.create(
-                    okhttp3.MediaType.parse("application/json"), json
+                    "application/json".toMediaType(), json
                 )
                 val baseUrl = com.civis.app.config.ServerConfig.API_URL
                 val request = okhttp3.Request.Builder()

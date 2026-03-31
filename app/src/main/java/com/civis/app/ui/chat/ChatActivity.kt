@@ -27,6 +27,7 @@ import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
 import com.civis.app.utils.visible
 import com.civis.app.utils.gone
+import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
@@ -288,7 +289,7 @@ class ChatActivity : AppCompatActivity() {
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null) {
-                        val mediaUrl = Gson().toJson(data).trim('"')
+                        val mediaUrl = appGson.toJson(data).trim('"')
                         sendMediaMessage(mediaUrl, type)
                     }
                 } else {
@@ -491,7 +492,7 @@ class ChatActivity : AppCompatActivity() {
         SocketManager.on("message_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
             try {
-                val message = Gson().fromJson(data.toString(), Message::class.java)
+                val message = appGson.fromJson(data.toString(), Message::class.java)
                 if (message.conversationId == conversationId || message.senderId == receiverId) {
                     runOnUiThread {
                         // Guardar en base local

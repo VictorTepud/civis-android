@@ -155,8 +155,8 @@ data class LoginRequest(
 )
 
 data class AuthResponse(
-    val token: String,
-    val user: User
+    val token: String = "",
+    val user: User = User()
 )
 
 data class SendMessageRequest(

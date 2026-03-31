@@ -2,6 +2,7 @@ package com.civis.app.ui.auth
 
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import com.civis.app.data.api.ApiClient
@@ -11,6 +12,7 @@ import com.civis.app.ui.main.MainActivity
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -81,29 +83,33 @@ class LoginActivity : AppCompatActivity() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val response = ApiClient.authApi.login(LoginRequest(email, password))
+                val rawBody = response.errorBody()?.string()
+                val rawSuccess = response.body()?.let { Gson().toJson(it) }
+
+                Log.d("LoginActivity", "Code: ${response.code()}, Body: $rawSuccess, Error: $rawBody")
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.gone()
                     binding.btnLogin.isEnabled = true
 
-                    if (response.isSuccessful) {
-                        // El wrapper del servidor envuelve: { success: true, data: { user, token } }
-                        // Gson deserializa data como AuthResponse
-                        val authResponse = response.body()
-                        if (authResponse != null && authResponse.token.isNotEmpty()) {
+                    if (response.isSuccessful && response.body() != null) {
+                        val authResponse = response.body()!!
+                        if (authResponse.token.isNotEmpty() && authResponse.user.id.isNotEmpty()) {
                             TokenManager.getInstance().saveToken(authResponse.token)
                             TokenManager.getInstance().saveUser(authResponse.user)
                             SocketManager.connect()
                             startActivity(Intent(this@LoginActivity, MainActivity::class.java))
                             finish()
                         } else {
-                            showToast("Respuesta vacía del servidor")
+                            Log.e("LoginActivity", "token vacío o user sin id. rawBody=$rawSuccess")
+                            showToast("Error: respuesta inesperada del servidor")
                         }
                     } else {
-                        val errorBody = response.errorBody()?.string()
-                        showToast("Error: ${errorBody ?: "Credenciales incorrectas"}")
+                        showToast("Error: ${rawBody ?: "Credenciales incorrectas"}")
                     }
                 }
             } catch (e: Exception) {
+                Log.e("LoginActivity", "Excepción: ${e.javaClass.simpleName}: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.progressBar.gone()
                     binding.btnLogin.isEnabled = true

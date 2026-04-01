@@ -106,7 +106,7 @@ class RegisterActivity : AppCompatActivity() {
                 )
                 val baseUrl = com.civis.app.config.ServerConfig.API_URL
                 val request = okhttp3.Request.Builder()
-                    .url("$baseUrl/auth/register")
+                    .url("${baseUrl}auth/register")
                     .post(body)
                     .build()
 

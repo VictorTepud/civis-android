@@ -91,7 +91,7 @@ class LoginActivity : AppCompatActivity() {
                 )
                 val baseUrl = com.civis.app.config.ServerConfig.API_URL
                 val request = okhttp3.Request.Builder()
-                    .url("$baseUrl/auth/login")
+                    .url("${baseUrl}auth/login")
                     .post(body)
                     .build()
 

@@ -80,9 +80,7 @@ class StatusFragment : Fragment() {
                     }
                 }
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) {
-                    requireContext().showToast("Error de conexión")
-                }
+                // Sin red → no mostrar toast
             }
         }
     }

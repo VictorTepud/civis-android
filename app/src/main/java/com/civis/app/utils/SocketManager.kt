@@ -6,14 +6,28 @@ import io.socket.client.Socket
 import org.json.JSONObject
 import java.net.URISyntaxException
 import com.civis.app.config.ServerConfig
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 object SocketManager {
 
     private const val TAG = "SocketManager"
 
     private var socket: Socket? = null
+    private var shouldConnect = false
 
     fun connect() {
+        shouldConnect = true
+        // Solo intentar conectar si hay red
+        if (!NetworkMonitor.isConnected.value) {
+            Log.d(TAG, "Sin red, se conectará cuando haya conexión")
+            return
+        }
+        doConnect()
+    }
+
+    private fun doConnect() {
         if (socket?.connected() == true) return
         try {
             val token = TokenManager.getInstance().getToken()
@@ -21,37 +35,43 @@ object SocketManager {
             val opts = IO.Options().apply {
                 reconnection = true
                 reconnectionAttempts = Int.MAX_VALUE
-                reconnectionDelay = 1000
-                reconnectionDelayMax = 5000
+                reconnectionDelay = 2000
+                reconnectionDelayMax = 10000
                 timeout = 30000
-                forceNew = true
+                forceNew = false
                 if (!token.isNullOrEmpty()) {
                     this.query = "token=$token"
                 }
             }
-            Log.d(TAG, "Conectando a: $serverUrl")
+            Log.d(TAG, "Conectando socket a: $serverUrl")
+
+            // Desconectar socket anterior si existe
+            socket?.disconnect()
+            socket?.off()
+
             socket = IO.socket(serverUrl, opts)
 
             socket?.on(Socket.EVENT_CONNECT) {
-                Log.d(TAG, "Conectado al servidor")
+                Log.d(TAG, "Socket conectado al servidor")
                 emit("user_online", null)
             }
 
-            socket?.on(Socket.EVENT_DISCONNECT) { args ->
-                Log.d(TAG, "Desconectado del servidor: ${args.joinToString()}")
+            socket?.on(Socket.EVENT_DISCONNECT) {
+                Log.d(TAG, "Socket desconectado")
             }
 
-            socket?.on(Socket.EVENT_CONNECT_ERROR) { args ->
-                Log.e(TAG, "Error de conexión: ${args.joinToString()}")
+            // Errores de conexión son normales al perder red, solo log info
+            socket?.on(Socket.EVENT_CONNECT_ERROR) {
+                Log.d(TAG, "Socket: error de conexión (servidor no alcanzable o sin red)")
             }
 
-            socket?.on("reconnect") { args ->
-                Log.d(TAG, "Reconectado: ${args.joinToString()}")
+            socket?.on("reconnect") {
+                Log.d(TAG, "Socket reconectado")
                 emit("user_online", null)
             }
 
-            socket?.on("reconnect_error") { args ->
-                Log.e(TAG, "Error de reconexión: ${args.joinToString()}")
+            socket?.on("reconnect_error") {
+                Log.d(TAG, "Socket: reintentando reconexión...")
             }
 
             socket?.connect()
@@ -61,9 +81,20 @@ object SocketManager {
     }
 
     fun disconnect() {
+        shouldConnect = false
         socket?.disconnect()
         socket?.off()
         socket = null
+    }
+
+    /**
+     * Debe llamarse cuando NetworkMonitor detecta que volvió la red.
+     */
+    fun onNetworkAvailable() {
+        if (shouldConnect && !isConnected()) {
+            Log.d(TAG, "Red disponible, intentando conectar socket...")
+            doConnect()
+        }
     }
 
     fun emit(event: String, data: Any?) {
@@ -73,17 +104,12 @@ object SocketManager {
             } else {
                 socket?.emit(event)
             }
-        } else {
-            Log.w(TAG, "Socket no conectado. No se puede emitir: $event")
         }
+        // Sin log de advertencia cuando no hay socket, es normal
     }
 
     fun emit(event: String, data: JSONObject) {
-        if (socket?.connected() == true) {
-            socket?.emit(event, data)
-        } else {
-            Log.w(TAG, "Socket no conectado. No se puede emitir: $event")
-        }
+        socket?.emit(event, data)
     }
 
     fun on(event: String, callback: (Array<Any>) -> Unit) {

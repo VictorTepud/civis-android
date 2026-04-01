@@ -479,8 +479,14 @@ class ChatActivity : AppCompatActivity() {
                         }
                     }
                 }
-            } catch (e: Exception) {
-                withContext(Dispatchers.Main) { showToast("Error de conexión") }
+            } catch (_: Exception) {
+                withContext(Dispatchers.Main) {
+                    val index = messages.indexOfFirst { it.id == messageId }
+                    if (index >= 0) {
+                        messages.removeAt(index)
+                        adapter.notifyItemRemoved(index)
+                    }
+                }
             }
         }
     }

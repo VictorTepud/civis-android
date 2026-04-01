@@ -6,6 +6,9 @@ import com.civis.app.utils.NetworkMonitor
 import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class CivisApp : Application() {
 
@@ -20,9 +23,17 @@ class CivisApp : Application() {
         // Monitorear estado de conexión
         NetworkMonitor.init(this)
 
-        // Conectar socket si hay sesión activa
+        // Conectar socket SOLO cuando haya red y haya sesión activa
         if (TokenManager.getInstance().isLoggedIn()) {
-            SocketManager.connect()
+            // Esperar a que NetworkMonitor detecte la red antes de conectar
+            CoroutineScope(Dispatchers.Main).launch {
+                NetworkMonitor.isConnected.collect { connected ->
+                    if (connected) {
+                        SocketManager.onNetworkAvailable()
+                    }
+                }
+            }
+            SocketManager.connect() // Esto no conecta si no hay red, marca shouldConnect=true
         }
     }
 

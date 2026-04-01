@@ -6,16 +6,17 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.civis.app.data.api.ApiClient
-import com.civis.app.data.local.LocalDatabase
 import com.civis.app.data.model.Conversation
 import com.civis.app.databinding.FragmentChatsBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.contacts.AddContactActivity
 import com.civis.app.utils.NetworkMonitor
+import com.civis.app.utils.TokenManager
 import com.civis.app.utils.appGson
 import com.civis.app.utils.showToast
+import com.civis.app.config.ServerConfig
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -28,6 +29,7 @@ class ChatsFragment : Fragment() {
     private val binding get() = _binding!!
     private lateinit var adapter: ConversationAdapter
     private val conversations = mutableListOf<Conversation>()
+    private var hasLoadedOnce = false
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?,
@@ -42,6 +44,15 @@ class ChatsFragment : Fragment() {
         setupRecyclerView()
         setupFab()
         loadConversations()
+
+        // Cuando vuelve la red, recargar conversaciones automáticamente
+        viewLifecycleOwner.lifecycleScope.launch {
+            NetworkMonitor.isConnected.collect { connected ->
+                if (connected && !binding.swipeRefreshLayout.isRefreshing) {
+                    loadConversations()
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -79,27 +90,31 @@ class ChatsFragment : Fragment() {
     }
 
     private fun loadConversations() {
+        val token = TokenManager.getInstance().getToken() ?: ""
+        if (token.isEmpty()) {
+            binding.swipeRefreshLayout.isRefreshing = false
+            return
+        }
+
         binding.swipeRefreshLayout.isRefreshing = true
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                val token = com.civis.app.utils.TokenManager.getInstance().getToken() ?: ""
-
-                if (token.isEmpty() || !NetworkMonitor.isConnected.value) {
-                    // Sin token o sin conexión → mostrar vacío, SIN toast de error
-                    withContext(Dispatchers.Main) {
-                        binding.swipeRefreshLayout.isRefreshing = false
-                    }
-                    return@launch
-                }
-
-                val client = okhttp3.OkHttpClient.Builder().build()
+                // Timeout corto para no bloquear mucho sin red
+                val client = okhttp3.OkHttpClient.Builder()
+                    .connectTimeout(5, java.util.concurrent.TimeUnit.SECONDS)
+                    .readTimeout(10, java.util.concurrent.TimeUnit.SECONDS)
+                    .build()
                 val request = okhttp3.Request.Builder()
-                    .url("${com.civis.app.config.ServerConfig.API_URL}messages/conversations")
+                    .url("${ServerConfig.API_URL}messages/conversations")
                     .addHeader("Authorization", "Bearer $token")
                     .build()
 
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string() ?: ""
+
+                withContext(Dispatchers.Main) {
+                    binding.swipeRefreshLayout.isRefreshing = false
+                }
 
                 if (response.isSuccessful) {
                     val jsonObj = org.json.JSONObject(responseBody)
@@ -110,27 +125,30 @@ class ChatsFragment : Fragment() {
                         val list: List<Conversation> = appGson.fromJson(data.toString(), type)
                         conversations.clear()
                         conversations.addAll(list)
+                        hasLoadedOnce = true
                         withContext(Dispatchers.Main) {
                             adapter.submitList(conversations.toList())
-                            binding.swipeRefreshLayout.isRefreshing = false
                         }
-                    } else {
+                    } else if (!hasLoadedOnce) {
+                        // Primera carga y no hay datos → lista vacía, normal
                         withContext(Dispatchers.Main) {
-                            binding.swipeRefreshLayout.isRefreshing = false
+                            adapter.submitList(emptyList())
                         }
                     }
-                } else {
+                } else if (!hasLoadedOnce) {
+                    // Primera carga y servidor responde error → no mostrar nada, solo log
                     withContext(Dispatchers.Main) {
-                        binding.swipeRefreshLayout.isRefreshing = false
+                        adapter.submitList(emptyList())
                     }
                 }
             } catch (e: Exception) {
-                android.util.Log.e("ChatsFragment", "Error cargando conversaciones: ${e.message}", e)
+                android.util.Log.d("ChatsFragment", "No se pudieron cargar conversaciones: ${e.message}")
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
-                    // Solo mostrar toast si es un error de servidor (no de red al inicio)
-                    if (NetworkMonitor.isConnected.value) {
-                        requireContext().showToast("Error al cargar conversaciones")
+                    // NUNCA mostrar toast de error de conexión — es molesto
+                    // Solo mostrar algo si ya habíamos cargado datos antes
+                    if (!hasLoadedOnce) {
+                        adapter.submitList(emptyList())
                     }
                 }
             }

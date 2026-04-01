@@ -98,7 +98,9 @@ class LoginActivity : AppCompatActivity() {
                 val response = client.newCall(request).execute()
                 val responseBody = response.body?.string() ?: ""
 
-                Log.d("LoginActivity", "Response: $responseBody")
+                Log.e("LoginActivity", "URL: $baseUrl/auth/login")
+                Log.e("LoginActivity", "HTTP Status: ${response.code}")
+                Log.e("LoginActivity", "Response: $responseBody")
 
                 // Parsear manualmente: { success: true, data: { token, user } }
                 val jsonObj = org.json.JSONObject(responseBody)

@@ -291,7 +291,7 @@ class ChatActivity : AppCompatActivity() {
             try {
                 val mediaType = mimeType.toMediaType()
                 val requestFile = file.asRequestBody(mediaType)
-                val body = okhttp3.MultipartBody.Part.createFormData("media", file.name, requestFile)
+                val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
                     val responseData = response.body()?.data

@@ -6,21 +6,22 @@ import retrofit2.Response
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
+import retrofit2.http.Query
 
 interface UploadApi {
     @Multipart
-    @POST("upload/avatar")
-    suspend fun uploadAvatar(@Part file: MultipartBody.Part): Response<ApiResponse>
+    @POST("upload/")
+    suspend fun uploadAvatar(@Part file: MultipartBody.Part, @Query("type") type: String = "avatar"): Response<ApiResponse>
 
     @Multipart
-    @POST("upload/media")
-    suspend fun uploadMedia(@Part file: MultipartBody.Part): Response<ApiResponse>
+    @POST("upload/")
+    suspend fun uploadMedia(@Part file: MultipartBody.Part, @Query("type") type: String = "media"): Response<ApiResponse>
 
     @Multipart
-    @POST("upload/status")
-    suspend fun uploadStatus(@Part file: MultipartBody.Part): Response<ApiResponse>
+    @POST("upload/")
+    suspend fun uploadStatus(@Part file: MultipartBody.Part, @Query("type") type: String = "status"): Response<ApiResponse>
 
     @Multipart
-    @POST("upload/attachment")
-    suspend fun uploadAttachment(@Part file: MultipartBody.Part): Response<ApiResponse>
+    @POST("upload/")
+    suspend fun uploadAttachment(@Part file: MultipartBody.Part, @Query("type") type: String = "media"): Response<ApiResponse>
 }

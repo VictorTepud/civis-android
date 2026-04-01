@@ -139,7 +139,7 @@ class CreateStatusActivity : AppCompatActivity() {
                     inputStream.close()
                     val mediaType = (contentResolver.getType(selectedImageUri!!) ?: "image/jpeg").toMediaType()
                     val requestFile = tempFile.asRequestBody(mediaType)
-                    val body = okhttp3.MultipartBody.Part.createFormData("status", tempFile.name, requestFile)
+                    val body = okhttp3.MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadStatus(body)
                     if (uploadResponse.isSuccessful) {
                         val data = uploadResponse.body()?.data

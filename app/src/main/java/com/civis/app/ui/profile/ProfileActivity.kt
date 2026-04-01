@@ -142,7 +142,7 @@ class ProfileActivity : AppCompatActivity() {
                     inputStream.close()
                     val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/jpeg").toMediaType()
                     val requestFile = tempFile.asRequestBody(mediaType)
-                    val body = okhttp3.MultipartBody.Part.createFormData("avatar", tempFile.name, requestFile)
+                    val body = okhttp3.MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)
                     if (uploadResponse.isSuccessful) {
                         val data = uploadResponse.body()?.data
@@ -156,7 +156,7 @@ class ProfileActivity : AppCompatActivity() {
                     name = name,
                     bio = bio.ifEmpty { null },
                     phone = phone.ifEmpty { null },
-                    avatar = avatarUrl
+                    avatar = avatarUrl ?: TokenManager.getInstance().getUser()?.avatar
                 )
 
                 val response = ApiClient.usersApi.updateProfile(request)
@@ -166,7 +166,7 @@ class ProfileActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         showToast("Perfil actualizado")
                         val user = TokenManager.getInstance().getUser()?.copy(
-                            name = name, bio = bio, phone = phone, avatar = avatarUrl
+                            name = name, bio = bio.ifEmpty { null }, phone = phone.ifEmpty { null }, avatar = avatarUrl ?: TokenManager.getInstance().getUser()?.avatar
                         )
                         if (user != null) TokenManager.getInstance().saveUser(user)
                         finish()

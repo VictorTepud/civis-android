@@ -17,7 +17,7 @@ object ServerConfig {
     // >>> CAMBIA ESTA IP A LA IP DE TU COMPUTADORA <<<
     const val SERVER_IP = "192.168.0.113"
 
-    const val SERVER_PORT = 3001
+    const val SERVER_PORT = 3000
 
     val BASE_URL: String
         get() = "http://$SERVER_IP:$SERVER_PORT"

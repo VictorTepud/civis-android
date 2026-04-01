@@ -48,6 +48,7 @@ class ChatActivity : AppCompatActivity() {
     private var receiverName: String = ""
     private var receiverAvatar: String = ""
     private var replyingTo: Message? = null
+    private var hasLoadedFromServer = false
 
     companion object {
         private const val PICK_IMAGE = 1001
@@ -366,6 +367,11 @@ class ChatActivity : AppCompatActivity() {
             binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
         }
 
+        // Guardar localmente siempre (para uso offline)
+        CoroutineScope(Dispatchers.IO).launch {
+            OfflineSyncManager.db?.insertMessage(localMsg)
+        }
+
         // Enviar en background
         CoroutineScope(Dispatchers.IO).launch {
             val result = OfflineSyncManager.sendOrQueueMessage(request)
@@ -418,10 +424,50 @@ class ChatActivity : AppCompatActivity() {
                     }
                 }
 
+                // Si hay conexión, sincronizar con el servidor
+                if (NetworkMonitor.isConnected.value && conversationId.isNotEmpty()) {
+                    try {
+                        val response = ApiClient.messagesApi.getMessages(conversationId)
+                        if (response.isSuccessful) {
+                            val data = response.body()?.data
+                            if (data != null) {
+                                val type = object : TypeToken<List<Message>>() {}.type
+                                val serverMessages: List<Message> = appGson.fromJson(appGson.toJson(data), type)
+
+                                // Combinar mensajes del servidor con pendientes locales
+                                val pending = OfflineSyncManager.db?.getPendingMessages() ?: emptyList()
+                                val serverIds = serverMessages.map { it.id }.toSet()
+                                val localToKeep = pending.filter { it.id !in serverIds }
+
+                                val allMessages = serverMessages.map {
+                                    OfflineSyncManager.toLocalMessage(it, "sent")
+                                } + localToKeep
+
+                                // Ordenar por fecha
+                                val sorted = allMessages.sortedBy { it.createdAt }
+
+                                withContext(Dispatchers.Main) {
+                                    messages.clear()
+                                    messages.addAll(sorted)
+                                    adapter.submitList(messages)
+                                    if (messages.isNotEmpty()) {
+                                        binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
+                                    }
+                                }
+                                hasLoadedFromServer = true
+                            }
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.d("ChatActivity", "No se pudo sincronizar con servidor: ${e.message}")
+                        // Ya se mostraron los mensajes locales, no hay error
+                    }
+                }
+
                 // Marcar como leídos
                 markMessagesAsRead()
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { showToast("Error al cargar mensajes") }
+                android.util.Log.d("ChatActivity", "Error cargando mensajes: ${e.message}")
+                // No mostrar error al usuario - los mensajes locales ya se cargaron
             }
         }
     }

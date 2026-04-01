@@ -6,10 +6,10 @@ import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
 /**
- * Helper de SQLite directo para almacenar mensajes localmente.
- * No requiere kapt/Room, compatible con todas las versiones de Java.
+ * Helper de SQLite directo para almacenar mensajes y conversaciones localmente.
+ * Permite funcionar offline y sincronizar cuando vuelve la conexión.
  */
-class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_messages.db", null, 1) {
+class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_messages.db", null, 2) {
 
     companion object {
         @Volatile
@@ -48,14 +48,47 @@ class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_message
             )
         """)
         db.execSQL("CREATE INDEX IF NOT EXISTS idx_conv_id ON messages(conversation_id)")
+
+        db.execSQL("""
+            CREATE TABLE IF NOT EXISTS conversations (
+                id TEXT PRIMARY KEY,
+                type TEXT DEFAULT 'individual',
+                name TEXT,
+                avatar TEXT,
+                last_message TEXT,
+                last_message_time TEXT,
+                unread_count INTEGER DEFAULT 0,
+                other_user_id TEXT,
+                other_user_name TEXT,
+                other_user_avatar TEXT,
+                other_user_online INTEGER DEFAULT 0,
+                other_user_last_seen TEXT
+            )
+        """)
     }
 
     override fun onUpgrade(db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
-        db.execSQL("DROP TABLE IF EXISTS messages")
-        onCreate(db)
+        if (oldVersion < 2) {
+            db.execSQL("""
+                CREATE TABLE IF NOT EXISTS conversations (
+                    id TEXT PRIMARY KEY,
+                    type TEXT DEFAULT 'individual',
+                    name TEXT,
+                    avatar TEXT,
+                    last_message TEXT,
+                    last_message_time TEXT,
+                    unread_count INTEGER DEFAULT 0,
+                    other_user_id TEXT,
+                    other_user_name TEXT,
+                    other_user_avatar TEXT,
+                    other_user_online INTEGER DEFAULT 0,
+                    other_user_last_seen TEXT
+                )
+            """)
+        }
     }
 
-    // ========== Operaciones ==========
+    // ========== Mensajes ==========
 
     fun getMessages(conversationId: String): List<LocalMessage> {
         val list = mutableListOf<LocalMessage>()
@@ -135,9 +168,56 @@ class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_message
         db.delete("messages", "conversation_id = ?", arrayOf(conversationId))
     }
 
-    fun deleteAll() {
+    fun deleteAllMessages() {
         val db = writableDatabase
         db.delete("messages", null, null)
+    }
+
+    // ========== Conversaciones ==========
+
+    fun getConversations(): List<LocalConversation> {
+        val list = mutableListOf<LocalConversation>()
+        val db = readableDatabase
+        val cursor = db.query(
+            "conversations",
+            null, null, null, null, null,
+            "last_message_time DESC"
+        )
+        cursor.use {
+            while (it.moveToNext()) list.add(it.toLocalConversation())
+        }
+        return list
+    }
+
+    fun insertConversations(conversations: List<LocalConversation>) {
+        val db = writableDatabase
+        db.beginTransaction()
+        try {
+            for (conv in conversations) {
+                db.insertWithOnConflict("conversations", null, conv.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE)
+            }
+            db.setTransactionSuccessful()
+        } finally {
+            db.endTransaction()
+        }
+    }
+
+    fun insertConversation(conv: LocalConversation) {
+        val db = writableDatabase
+        db.insertWithOnConflict("conversations", null, conv.toContentValues(), SQLiteDatabase.CONFLICT_REPLACE)
+    }
+
+    fun updateLastMessage(conversationId: String, lastMessage: String?, lastMessageTime: String?) {
+        val db = writableDatabase
+        db.execSQL(
+            "UPDATE conversations SET last_message = ?, last_message_time = ? WHERE id = ?",
+            arrayOf(lastMessage, lastMessageTime, conversationId)
+        )
+    }
+
+    fun deleteAllConversations() {
+        val db = writableDatabase
+        db.delete("conversations", null, null)
     }
 
     // ========== Extensiones ==========
@@ -162,6 +242,23 @@ class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_message
         )
     }
 
+    private fun android.database.Cursor.toLocalConversation(): LocalConversation {
+        return LocalConversation(
+            id = getString(getColumnIndexOrThrow("id")),
+            type = getStringOrNull(getColumnIndex("type")) ?: "individual",
+            name = getStringOrNull(getColumnIndex("name")),
+            avatar = getStringOrNull(getColumnIndex("avatar")),
+            lastMessage = getStringOrNull(getColumnIndex("last_message")),
+            lastMessageTime = getStringOrNull(getColumnIndex("last_message_time")),
+            unreadCount = getInt(getColumnIndexOrThrow("unread_count")),
+            otherUserId = getStringOrNull(getColumnIndex("other_user_id")),
+            otherUserName = getStringOrNull(getColumnIndex("other_user_name")),
+            otherUserAvatar = getStringOrNull(getColumnIndex("other_user_avatar")),
+            otherUserOnline = getInt(getColumnIndexOrThrow("other_user_online")) == 1,
+            otherUserLastSeen = getStringOrNull(getColumnIndex("other_user_last_seen"))
+        )
+    }
+
     private fun android.database.Cursor.getStringOrNull(index: Int): String? {
         return if (index < 0 || isNull(index)) null else getString(index)
     }
@@ -183,6 +280,23 @@ class LocalDatabase(context: Context) : SQLiteOpenHelper(context, "civis_message
             put("sender_name", senderName)
             put("sender_avatar", senderAvatar)
             put("status", status)
+        }
+    }
+
+    private fun LocalConversation.toContentValues(): ContentValues {
+        return ContentValues().apply {
+            put("id", id)
+            put("type", type)
+            put("name", name)
+            put("avatar", avatar)
+            put("last_message", lastMessage)
+            put("last_message_time", lastMessageTime)
+            put("unread_count", unreadCount)
+            put("other_user_id", otherUserId)
+            put("other_user_name", otherUserName)
+            put("other_user_avatar", otherUserAvatar)
+            put("other_user_online", if (otherUserOnline) 1 else 0)
+            put("other_user_last_seen", otherUserLastSeen)
         }
     }
 }

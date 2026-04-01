@@ -2,6 +2,7 @@ package com.civis.app.utils
 
 import android.util.Log
 import com.civis.app.data.api.ApiClient
+import com.civis.app.data.local.LocalConversation
 import com.civis.app.data.local.LocalDatabase
 import com.civis.app.data.local.LocalMessage
 import com.civis.app.data.model.Message
@@ -13,7 +14,7 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 /**
- * Gestiona la sincronización de mensajes offline con SQLite.
+ * Gestiona la sincronización de mensajes y conversaciones offline con SQLite.
  */
 object OfflineSyncManager {
 
@@ -89,6 +90,10 @@ object OfflineSyncManager {
                         val msg = appGson.fromJson(appGson.toJson(data), Message::class.java)
                         val localMsg = toLocalMessage(msg, "sent")
                         database.insertMessage(localMsg)
+
+                        // Actualizar conversación local con el último mensaje
+                        updateLocalConversation(msg)
+
                         return msg
                     }
                 }
@@ -135,6 +140,40 @@ object OfflineSyncManager {
     }
 
     /**
+     * Actualiza la conversación local con el último mensaje enviado/recibido.
+     */
+    private fun updateLocalConversation(message: Message) {
+        val database = db ?: return
+        val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
+        val otherUserId = if (message.senderId == currentUserId) message.receiverId else message.senderId
+        val otherUserName = TokenManager.getInstance().getUser()?.name ?: ""
+
+        if (message.conversationId.isNotEmpty() && otherUserId != null) {
+            // Verificar si la conversación ya existe localmente
+            val existing = database.getConversations().firstOrNull { it.id == message.conversationId }
+            if (existing != null) {
+                database.updateLastMessage(
+                    conversationId = message.conversationId,
+                    lastMessage = message.content ?: "[Media]",
+                    lastMessageTime = message.createdAt ?: SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US)
+                        .apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
+                )
+            } else {
+                // Crear nueva conversación local
+                val conv = LocalConversation(
+                    id = message.conversationId,
+                    type = "individual",
+                    lastMessage = message.content ?: "[Media]",
+                    lastMessageTime = message.createdAt,
+                    otherUserId = otherUserId,
+                    otherUserName = otherUserName
+                )
+                database.insertConversation(conv)
+            }
+        }
+    }
+
+    /**
      * Sincroniza mensajes pendientes cuando se restaura la conexión.
      */
     private suspend fun syncPendingMessages() {
@@ -168,6 +207,10 @@ object OfflineSyncManager {
                             val serverMsg = appGson.fromJson(appGson.toJson(data), Message::class.java)
                             database.softDelete(msg.id)
                             database.insertMessage(toLocalMessage(serverMsg, "sent"))
+
+                            // Actualizar conversación local
+                            updateLocalConversation(serverMsg)
+
                             Log.d(TAG, "Mensaje sincronizado: ${serverMsg.id}")
                         }
                     } else {
@@ -217,6 +260,8 @@ object OfflineSyncManager {
      */
     suspend fun saveReceivedMessage(message: Message) {
         db?.insertMessage(toLocalMessage(message, "sent"))
+        // Actualizar conversación local
+        updateLocalConversation(message)
     }
 
     /**
@@ -227,7 +272,8 @@ object OfflineSyncManager {
     }
 
     suspend fun clearAll() {
-        db?.deleteAll()
+        db?.deleteAllMessages()
+        db?.deleteAllConversations()
     }
 
     fun toLocalMessage(message: Message, status: String): LocalMessage {

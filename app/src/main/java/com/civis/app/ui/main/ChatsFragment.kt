@@ -8,11 +8,13 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.civis.app.data.local.LocalConversation
 import com.civis.app.data.model.Conversation
 import com.civis.app.databinding.FragmentChatsBinding
 import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.contacts.AddContactActivity
 import com.civis.app.utils.NetworkMonitor
+import com.civis.app.utils.OfflineSyncManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.appGson
 import com.civis.app.utils.showToast
@@ -93,6 +95,8 @@ class ChatsFragment : Fragment() {
         val token = TokenManager.getInstance().getToken() ?: ""
         if (token.isEmpty()) {
             binding.swipeRefreshLayout.isRefreshing = false
+            // Sin token, cargar lo que haya localmente
+            loadLocalConversations()
             return
         }
 
@@ -117,12 +121,18 @@ class ChatsFragment : Fragment() {
                 }
 
                 if (response.isSuccessful) {
+                    // Respuesta: {success: true, data: [...]}
                     val jsonObj = org.json.JSONObject(responseBody)
                     val data = jsonObj.optJSONArray("data")
 
                     if (data != null) {
                         val type = object : TypeToken<List<Conversation>>() {}.type
                         val list: List<Conversation> = appGson.fromJson(data.toString(), type)
+
+                        // Guardar conversaciones en caché local para uso offline
+                        val localConvs = list.map { LocalConversation.fromConversation(it) }
+                        OfflineSyncManager.db?.insertConversations(localConvs)
+
                         conversations.clear()
                         conversations.addAll(list)
                         hasLoadedOnce = true
@@ -130,32 +140,46 @@ class ChatsFragment : Fragment() {
                             adapter.submitList(conversations.toList())
                         }
                     } else if (!hasLoadedOnce) {
-                        // Primera carga y no hay datos → lista vacía, normal
-                        withContext(Dispatchers.Main) {
-                            adapter.submitList(emptyList())
-                        }
+                        // No hay datos del servidor, cargar locales
+                        loadLocalConversations()
                     }
                 } else if (!hasLoadedOnce) {
-                    // Primera carga y servidor responde error → no mostrar nada, solo log
-                    withContext(Dispatchers.Main) {
-                        adapter.submitList(emptyList())
-                    }
+                    // Error del servidor, cargar locales
+                    loadLocalConversations()
                 }
             } catch (e: Exception) {
-                android.util.Log.d("ChatsFragment", "No se pudieron cargar conversaciones: ${e.message}")
+                android.util.Log.d("ChatsFragment", "No se pudieron cargar del servidor: ${e.message}")
                 withContext(Dispatchers.Main) {
                     binding.swipeRefreshLayout.isRefreshing = false
-                    // NUNCA mostrar toast de error de conexión — es molesto
-                    // Solo mostrar algo si ya habíamos cargado datos antes
-                    if (!hasLoadedOnce) {
-                        adapter.submitList(emptyList())
-                    }
                 }
+                // Error de red → cargar conversaciones locales
+                loadLocalConversations()
             }
         }
 
         binding.swipeRefreshLayout.setOnRefreshListener {
             loadConversations()
+        }
+    }
+
+    /**
+     * Carga conversaciones desde la base de datos local (SQLite).
+     * Se usa cuando no hay conexión al servidor.
+     */
+    private fun loadLocalConversations() {
+        CoroutineScope(Dispatchers.IO).launch {
+            val localConvs = OfflineSyncManager.db?.getConversations() ?: emptyList()
+            val convList = localConvs.map { it.toConversation() }
+
+            withContext(Dispatchers.Main) {
+                if (convList.isNotEmpty()) {
+                    conversations.clear()
+                    conversations.addAll(convList)
+                    adapter.submitList(conversations.toList())
+                } else {
+                    adapter.submitList(emptyList())
+                }
+            }
         }
     }
 

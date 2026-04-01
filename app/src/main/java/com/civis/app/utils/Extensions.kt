@@ -1,8 +1,11 @@
 package com.civis.app.utils
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.view.View
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import com.bumptech.glide.request.RequestOptions
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
@@ -91,4 +94,72 @@ fun View.gone() {
 
 fun View.invisible() {
     this.visibility = View.INVISIBLE
+}
+
+// ========== Permisos Android 13+ ==========
+
+/** Verifica si se tiene permiso para leer imágenes */
+fun Context.hasImagePermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES)
+            == PackageManager.PERMISSION_GRANTED
+    } else {
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+/** Verifica si se tiene permiso para leer videos */
+fun Context.hasVideoPermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_VIDEO)
+            == PackageManager.PERMISSION_GRANTED
+    } else {
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+/** Verifica si se tiene permiso para leer archivos (documentos) */
+fun Context.hasFilePermission(): Boolean {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        // En API 33+, READ_MEDIA_IMAGES cubre la mayoría de archivos
+        hasImagePermission()
+    } else {
+        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            == PackageManager.PERMISSION_GRANTED
+    }
+}
+
+/** Retorna los permisos necesarios según la versión de Android */
+fun imagePermissions(): Array<String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)
+    } else {
+        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+}
+
+fun videoPermissions(): Array<String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(android.Manifest.permission.READ_MEDIA_VIDEO)
+    } else {
+        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+}
+
+fun filePermissions(): Array<String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES, android.Manifest.permission.READ_MEDIA_VIDEO)
+    } else {
+        arrayOf(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
+}
+
+fun cameraPermissions(): Array<String> {
+    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        arrayOf(android.Manifest.permission.CAMERA)
+    } else {
+        arrayOf(android.Manifest.permission.CAMERA, android.Manifest.permission.READ_EXTERNAL_STORAGE)
+    }
 }

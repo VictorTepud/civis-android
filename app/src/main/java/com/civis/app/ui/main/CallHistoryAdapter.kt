@@ -12,7 +12,9 @@ import com.civis.app.databinding.ItemCallBinding
 import com.civis.app.utils.formatDate
 import com.civis.app.utils.toGlideUrl
 
-class CallHistoryAdapter : ListAdapter<Call, CallHistoryAdapter.ViewHolder>(DiffCallback) {
+class CallHistoryAdapter(
+    private val onCallClick: ((Call) -> Unit)? = null
+) : ListAdapter<Call, CallHistoryAdapter.ViewHolder>(DiffCallback) {
 
     inner class ViewHolder(val binding: ItemCallBinding) :
         RecyclerView.ViewHolder(binding.root)
@@ -65,6 +67,10 @@ class CallHistoryAdapter : ListAdapter<Call, CallHistoryAdapter.ViewHolder>(Diff
             }
 
             tvTime.text = call.startedAt?.formatDate() ?: ""
+
+            root.setOnClickListener {
+                onCallClick?.invoke(call)
+            }
         }
     }
 }

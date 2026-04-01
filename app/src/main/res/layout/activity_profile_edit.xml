@@ -16,15 +16,47 @@
         app:title="@string/edit_profile"
         app:titleTextColor="@color/white" />
 
-    <de.hdodenhof.circleimageview.CircleImageView
-        android:id="@+id/ivAvatar"
-        android:layout_width="@dimen/avatar_xlarge"
-        android:layout_height="@dimen/avatar_xlarge"
+    <FrameLayout
+        android:id="@+id/frameAvatar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/spacing_lg"
-        android:src="@drawable/ic_profile"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbar" />
+        app:layout_constraintTop_toBottomOf="@+id/toolbar">
+
+        <de.hdodenhof.circleimageview.CircleImageView
+            android:id="@+id/ivAvatar"
+            android:layout_width="@dimen/avatar_xlarge"
+            android:layout_height="@dimen/avatar_xlarge"
+            android:src="@drawable/ic_profile" />
+
+        <View
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:layout_gravity="bottom|end"
+            android:background="@drawable/bg_add_badge" />
+
+        <ImageView
+            android:layout_width="18dp"
+            android:layout_height="18dp"
+            android:layout_gravity="bottom|end"
+            android:layout_margin="7dp"
+            android:contentDescription="Cambiar foto"
+            android:src="@drawable/ic_camera" />
+
+    </FrameLayout>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/spacing_xs"
+        android:text="Toca para cambiar la foto"
+        android:textColor="@color/civis_green"
+        android:textSize="@dimen/text_xs"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@+id/frameAvatar" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilName"
@@ -36,7 +68,7 @@
         android:hint="@string/name"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/ivAvatar">
+        app:layout_constraintTop_toBottomOf="@+id/frameAvatar">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etName"

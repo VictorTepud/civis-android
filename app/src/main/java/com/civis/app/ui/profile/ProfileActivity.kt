@@ -1,13 +1,12 @@
 package com.civis.app.ui.profile
 
-import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.bumptech.glide.Glide
 import com.civis.app.R
@@ -15,6 +14,8 @@ import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.UpdateProfileRequest
 import com.civis.app.databinding.ActivityProfileEditBinding
 import com.civis.app.ui.auth.LoginActivity
+import com.civis.app.utils.hasImagePermission
+import com.civis.app.utils.imagePermissions
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
@@ -31,6 +32,19 @@ class ProfileActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityProfileEditBinding
     private var selectedAvatarUri: Uri? = null
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        selectedAvatarUri = uri
+        uri?.let { binding.ivAvatar.setImageURI(it) }
+    }
+
+    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            pickImageLauncher.launch("image/*")
+        } else {
+            showToast("Permiso denegado para acceder a imágenes")
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,13 +101,10 @@ class ProfileActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.ivAvatar.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                val intent = Intent(Intent.ACTION_PICK).apply { type = "image/*" }
-                startActivityForResult(intent, 1001)
+            if (hasImagePermission()) {
+                pickImageLauncher.launch("image/*")
             } else {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
+                permissionLauncher.launch(imagePermissions().first())
             }
         }
 
@@ -106,13 +117,7 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK && data != null && requestCode == 1001) {
-            selectedAvatarUri = data.data
-            binding.ivAvatar.setImageURI(selectedAvatarUri)
-        }
-    }
+    // onActivityResult ya no es necesario — se usa Activity Result API
 
     private fun saveProfile() {
         val name = binding.etName.text.toString().trim()

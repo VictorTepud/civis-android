@@ -5,33 +5,146 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <LinearLayout
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewStatuses"
+        <LinearLayout
+            android:id="@+id/layoutContent"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="@dimen/spacing_md"
-            android:orientation="horizontal" />
+            android:layout_height="match_parent"
+            android:orientation="vertical">
 
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="@dimen/spacing_md"
-            android:text="@string/recent_updates"
-            android:textColor="@color/civis_green"
-            android:textSize="@dimen/text_lg"
-            android:textStyle="bold" />
+            <!-- Mi estado section -->
+            <LinearLayout
+                android:id="@+id/layoutMyStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_margin="@dimen/spacing_md"
+                android:background="@color/white"
+                android:clickable="true"
+                android:focusable="true"
+                android:foreground="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:padding="@dimen/spacing_md">
 
-        <androidx.recyclerview.widget.RecyclerView
-            android:id="@+id/recyclerViewRecentStatuses"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+                <FrameLayout
+                    android:layout_width="@dimen/avatar_xlarge"
+                    android:layout_height="@dimen/avatar_xlarge">
 
-    </LinearLayout>
+                    <de.hdodenhof.circleimageview.CircleImageView
+                        android:id="@+id/ivMyStatusAvatar"
+                        android:layout_width="@dimen/avatar_xlarge"
+                        android:layout_height="@dimen/avatar_xlarge"
+                        android:src="@drawable/ic_profile" />
+
+                    <View
+                        android:layout_width="28dp"
+                        android:layout_height="28dp"
+                        android:layout_gravity="bottom|end"
+                        android:background="@drawable/bg_add_badge" />
+
+                    <ImageView
+                        android:layout_width="16dp"
+                        android:layout_height="16dp"
+                        android:layout_gravity="bottom|end"
+                        android:layout_margin="6dp"
+                        android:src="@drawable/ic_add" />
+                </FrameLayout>
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/spacing_md"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/my_status"
+                        android:textColor="@color/text_primary"
+                        android:textSize="@dimen/text_lg"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvMyStatusTime"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="@dimen/text_sm" />
+                </LinearLayout>
+
+            </LinearLayout>
+
+            <!-- Other users' statuses horizontal list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewStatuses"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/spacing_md"
+                android:layout_marginBottom="@dimen/spacing_sm"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingEnd="@dimen/spacing_md" />
+
+            <!-- Recent updates header -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="@dimen/spacing_md"
+                android:text="@string/recent_updates"
+                android:textColor="@color/civis_green"
+                android:textSize="@dimen/text_lg"
+                android:textStyle="bold" />
+
+            <!-- Empty state -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:alpha="0.4"
+                    android:src="@drawable/ic_status"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:text="No hay estados recientes"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_lg" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_xl"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    android:text="Toca + para crear tu primer estado.\nComparte texto o fotos que desaparecen en 24 horas."
+                    android:textAlignment="center"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_sm" />
+
+            </LinearLayout>
+
+            <!-- Recent statuses vertical list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewRecentStatuses"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+        </LinearLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreateStatus"

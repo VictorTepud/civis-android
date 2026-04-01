@@ -2,11 +2,12 @@ package com.civis.app.ui.chat
 
 import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.widget.PopupMenu
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -18,6 +19,13 @@ import com.civis.app.data.model.Message
 import com.civis.app.data.model.SendMessageRequest
 import com.civis.app.databinding.ActivityChatBinding
 import com.civis.app.ui.calls.CallActivity
+import com.civis.app.utils.cameraPermissions
+import com.civis.app.utils.filePermissions
+import com.civis.app.utils.hasFilePermission
+import com.civis.app.utils.hasImagePermission
+import com.civis.app.utils.hasVideoPermission
+import com.civis.app.utils.imagePermissions
+import com.civis.app.utils.videoPermissions
 import com.civis.app.utils.NetworkMonitor
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -47,13 +55,35 @@ class ChatActivity : AppCompatActivity() {
     private var receiverName: String = ""
     private var receiverAvatar: String = ""
     private var replyingTo: Message? = null
+    private val PERMISSION_REQUEST = 1005
 
-    companion object {
-        private const val PICK_IMAGE = 1001
-        private const val PICK_FILE = 1002
-        private const val PICK_VIDEO = 1003
-        private const val CAMERA_REQUEST = 1004
-        private const val PERMISSION_REQUEST = 1005
+    // Activity Result APIs (modern, no deprecated startActivityForResult)
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadAndSendMedia(it, "image") }
+    }
+
+    private val pickVideoLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadAndSendMedia(it, "video") }
+    }
+
+    private val pickFileLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        uri?.let { uploadAndSendMedia(it, "document") }
+    }
+
+    private val cameraLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        if (result.resultCode == RESULT_OK) {
+            val photo = result.data?.extras?.get("data") as? android.graphics.Bitmap
+            if (photo != null) {
+                val file = java.io.File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+                file.outputStream().use { photo.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, it) }
+                uploadFile(file, "image/jpeg", "image")
+            }
+        }
+    }
+
+    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { grants ->
+        val allGranted = grants.values.all { it }
+        if (!allGranted) showToast("Permiso denegado. No se puede acceder a los archivos.")
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -186,12 +216,6 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun showAttachmentOptions() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST)
-            return
-        }
         val options = arrayOf("Cámara", "Galería", "Video", "Documento")
         android.app.AlertDialog.Builder(this)
             .setTitle("Adjuntar")
@@ -207,48 +231,38 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun openCamera() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
-            != PackageManager.PERMISSION_GRANTED
-        ) {
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST)
-            return
+        val perms = cameraPermissions()
+        if (perms.all { ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED }) {
+            cameraLauncher.launch(Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE))
+        } else {
+            permissionLauncher.launch(perms)
         }
-        val cameraIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
-        startActivityForResult(cameraIntent, CAMERA_REQUEST)
     }
 
     private fun openGallery() {
-        startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, PICK_IMAGE)
+        val perms = imagePermissions()
+        if (hasImagePermission()) {
+            pickImageLauncher.launch("image/*")
+        } else {
+            permissionLauncher.launch(perms)
+        }
     }
 
     private fun openVideoPicker() {
-        startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "video/*" }, PICK_VIDEO)
+        val perms = videoPermissions()
+        if (hasVideoPermission()) {
+            pickVideoLauncher.launch("video/*")
+        } else {
+            permissionLauncher.launch(perms)
+        }
     }
 
     private fun openFilePicker() {
-        startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).apply {
-            type = "*/*"
-            addCategory(Intent.CATEGORY_OPENABLE)
-        }, PICK_FILE)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK && data != null) {
-            when (requestCode) {
-                PICK_IMAGE -> data.data?.let { uploadAndSendMedia(it, "image") }
-                PICK_VIDEO -> data.data?.let { uploadAndSendMedia(it, "video") }
-                PICK_FILE -> data.data?.let { uploadAndSendMedia(it, "document") }
-                CAMERA_REQUEST -> {
-                    val photo = data.extras?.get("data") as? android.graphics.Bitmap
-                    if (photo != null) {
-                        // Guardar bitmap temporal y subir como imagen
-                        val file = java.io.File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
-                        file.outputStream().use { photo.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, it) }
-                        uploadFile(file, "image/jpeg", "image")
-                    }
-                }
-            }
+        val perms = filePermissions()
+        if (hasFilePermission()) {
+            pickFileLauncher.launch("*/*")
+        } else {
+            permissionLauncher.launch(perms)
         }
     }
 

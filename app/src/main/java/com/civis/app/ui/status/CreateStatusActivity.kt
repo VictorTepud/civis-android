@@ -1,19 +1,19 @@
 package com.civis.app.ui.status
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.view.View
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.CreateStatusRequest
 import com.civis.app.databinding.ActivityCreateStatusBinding
+import com.civis.app.utils.hasImagePermission
+import com.civis.app.utils.imagePermissions
 import com.civis.app.utils.showToast
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.asRequestBody
@@ -30,9 +30,22 @@ class CreateStatusActivity : AppCompatActivity() {
     private var statusType = "text"
 
     companion object {
-        private const val PICK_IMAGE = 1001
-        private const val CAMERA_REQUEST = 1002
         private val colors = listOf("#25D366", "#128C7E", "#075E54", "#34B7F1", "#FF6B6B", "#FFA500", "#9B59B6", "#1ABC9C")
+    }
+
+    private val pickImageLauncher = registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+        selectedImageUri = uri
+        uri?.let {
+            binding.ivPreviewImage.setImageURI(it)
+            binding.ivPreviewImage.visibility = View.VISIBLE
+            statusType = "image"
+        }
+    }
+
+    private val permissionLauncher = registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        if (granted) {
+            pickImageLauncher.launch("image/*")
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,13 +81,10 @@ class CreateStatusActivity : AppCompatActivity() {
 
     private fun setupListeners() {
         binding.btnPickImage.setOnClickListener {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                == PackageManager.PERMISSION_GRANTED
-            ) {
-                val intent = Intent(Intent.ACTION_PICK).apply { type = "image/*" }
-                startActivityForResult(intent, PICK_IMAGE)
+            if (hasImagePermission()) {
+                pickImageLauncher.launch("image/*")
             } else {
-                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 100)
+                permissionLauncher.launch(imagePermissions().first())
             }
         }
 
@@ -100,15 +110,8 @@ class CreateStatusActivity : AppCompatActivity() {
         }
     }
 
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK && data != null && requestCode == PICK_IMAGE) {
-            selectedImageUri = data.data
-            binding.ivPreviewImage.setImageURI(selectedImageUri)
-            binding.ivPreviewImage.visibility = View.VISIBLE
-            statusType = "image"
-        }
-    }
+    // onActivityResult ya no es necesario — se usa Activity Result API
+
 
     private fun postStatus() {
         val content = binding.etStatusContent.text.toString().trim()
@@ -130,14 +133,20 @@ class CreateStatusActivity : AppCompatActivity() {
             try {
                 var mediaUrl: String? = null
                 if (statusType == "image" && selectedImageUri != null) {
-                    val file = java.io.File(selectedImageUri!!.path ?: return@launch)
-                    val mediaType = (contentResolver.getType(selectedImageUri!!) ?: "image/*").toMediaType()
-                    val requestFile = file.asRequestBody(mediaType)
-                    val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                    val inputStream = contentResolver.openInputStream(selectedImageUri!!) ?: return@launch
+                    val tempFile = java.io.File(cacheDir, "status_${System.currentTimeMillis()}.jpg")
+                    tempFile.outputStream().use { out -> inputStream.copyTo(out) }
+                    inputStream.close()
+                    val mediaType = (contentResolver.getType(selectedImageUri!!) ?: "image/jpeg").toMediaType()
+                    val requestFile = tempFile.asRequestBody(mediaType)
+                    val body = okhttp3.MultipartBody.Part.createFormData("status", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadStatus(body)
                     if (uploadResponse.isSuccessful) {
-                        mediaUrl = uploadResponse.body()?.data?.toString()
+                        val data = uploadResponse.body()?.data
+                        val dataMap = data as? Map<*, *>
+                        mediaUrl = dataMap?.get("url") as? String
                     }
+                    tempFile.delete()
                 }
 
                 val request = CreateStatusRequest(

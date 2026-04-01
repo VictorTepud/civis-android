@@ -5,12 +5,100 @@
     android:layout_height="match_parent"
     android:background="@color/background">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recyclerViewCommunities"
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefreshLayout"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:padding="@dimen/spacing_sm" />
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:id="@+id/layoutContent"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical">
+
+            <!-- Search bar -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/searchInputLayout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/spacing_md"
+                android:layout_marginTop="@dimen/spacing_md"
+                android:layout_marginBottom="@dimen/spacing_sm"
+                android:hint="Buscar comunidades..."
+                app:boxCornerRadiusBottomEnd="@dimen/corner_radius_large"
+                app:boxCornerRadiusBottomStart="@dimen/corner_radius_large"
+                app:boxCornerRadiusTopEnd="@dimen/corner_radius_large"
+                app:boxCornerRadiusTopStart="@dimen/corner_radius_large"
+                app:startIconDrawable="@drawable/ic_search"
+                app:startIconTint="@color/text_secondary">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etSearch"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:textSize="@dimen/text_md" />
+
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <!-- Empty state -->
+            <LinearLayout
+                android:id="@+id/layoutEmptyState"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <ImageView
+                    android:layout_width="80dp"
+                    android:layout_height="80dp"
+                    android:alpha="0.4"
+                    android:src="@drawable/ic_community"
+                    app:tint="@color/text_secondary" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:text="@string/no_communities"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_lg" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginHorizontal="@dimen/spacing_xl"
+                    android:layout_marginTop="@dimen/spacing_xs"
+                    android:text="Únete a comunidades para compartir con grupos de personas."
+                    android:textAlignment="center"
+                    android:textColor="@color/text_secondary"
+                    android:textSize="@dimen/text_sm" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnExploreCommunities"
+                    style="@style/Widget.Material3.Button.TonalButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="@dimen/spacing_md"
+                    android:text="Explorar comunidades"
+                    android:textSize="@dimen/text_md" />
+
+            </LinearLayout>
+
+            <!-- Communities list -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/recyclerViewCommunities"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:clipToPadding="false"
+                android:padding="@dimen/spacing_sm" />
+
+        </LinearLayout>
+
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
         android:id="@+id/fabCreateCommunity"

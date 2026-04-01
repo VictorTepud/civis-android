@@ -7,6 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import com.civis.app.databinding.FragmentProfileBinding
 import com.civis.app.ui.profile.ProfileActivity
 import com.civis.app.utils.TokenManager
@@ -48,8 +49,9 @@ class ProfileFragment : Fragment() {
             binding.tvUserPhone.text = user.phone.ifEmpty { "No configurado" }
 
             if (!user.avatar.isNullOrEmpty()) {
-                Glide.with(requireContext())
+                Glide.with(this)
                     .load(user.avatar.toGlideUrl())
+                    .signature(ObjectKey(System.currentTimeMillis()))
                     .placeholder(com.civis.app.R.drawable.ic_profile)
                     .into(binding.ivAvatar)
             } else {

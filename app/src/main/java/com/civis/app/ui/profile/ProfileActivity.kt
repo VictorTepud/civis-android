@@ -7,6 +7,7 @@ import android.view.View
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.UpdateProfileRequest
@@ -68,6 +69,7 @@ class ProfileActivity : AppCompatActivity() {
             if (!savedUser.avatar.isNullOrEmpty()) {
                 Glide.with(this)
                     .load(savedUser.avatar.toGlideUrl())
+                    .signature(ObjectKey(System.currentTimeMillis()))
                     .placeholder(R.drawable.ic_profile)
                     .into(binding.ivAvatar)
             }
@@ -87,6 +89,7 @@ class ProfileActivity : AppCompatActivity() {
                             if (!user.avatar.isNullOrEmpty()) {
                                 Glide.with(this@ProfileActivity)
                                     .load(user.avatar.toGlideUrl())
+                                    .signature(ObjectKey(System.currentTimeMillis()))
                                     .placeholder(R.drawable.ic_profile)
                                     .into(binding.ivAvatar)
                             }

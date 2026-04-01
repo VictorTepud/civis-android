@@ -165,8 +165,12 @@ class ProfileActivity : AppCompatActivity() {
                     binding.btnSave.isEnabled = true
                     if (response.isSuccessful) {
                         showToast("Perfil actualizado")
-                        val user = TokenManager.getInstance().getUser()?.copy(
-                            name = name, bio = bio.ifEmpty { null }, phone = phone.ifEmpty { null }, avatar = avatarUrl ?: TokenManager.getInstance().getUser()?.avatar
+                        val currentUser = TokenManager.getInstance().getUser()
+                        val finalAvatar = avatarUrl ?: currentUser?.avatar
+                        val finalBio = if (bio.isEmpty()) currentUser?.bio else bio
+                        val finalPhone = if (phone.isEmpty()) currentUser?.phone else phone
+                        val user = currentUser?.copy(
+                            name = name, bio = finalBio, phone = finalPhone ?: "", avatar = finalAvatar
                         )
                         if (user != null) TokenManager.getInstance().saveUser(user)
                         finish()

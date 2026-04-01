@@ -12,18 +12,13 @@
         android:title="@string/status" />
 
     <item
-        android:id="@+id/nav_calls"
-        android:icon="@drawable/ic_call"
-        android:title="@string/calls" />
-
-    <item
         android:id="@+id/nav_communities"
         android:icon="@drawable/ic_community"
         android:title="@string/communities" />
 
     <item
-        android:id="@+id/nav_profile"
-        android:icon="@drawable/ic_profile"
-        android:title="@string/profile" />
+        android:id="@+id/nav_calls"
+        android:icon="@drawable/ic_call"
+        android:title="@string/calls" />
 
 </menu>

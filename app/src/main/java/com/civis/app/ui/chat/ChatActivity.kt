@@ -28,7 +28,6 @@ import com.civis.app.utils.showToast
 import com.civis.app.utils.visible
 import com.civis.app.utils.gone
 import com.civis.app.utils.appGson
-import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,13 +47,13 @@ class ChatActivity : AppCompatActivity() {
     private var receiverName: String = ""
     private var receiverAvatar: String = ""
     private var replyingTo: Message? = null
-    private var hasLoadedFromServer = false
 
     companion object {
         private const val PICK_IMAGE = 1001
         private const val PICK_FILE = 1002
-        private const val CAMERA_REQUEST = 1003
-        private const val PERMISSION_REQUEST = 1004
+        private const val PICK_VIDEO = 1003
+        private const val CAMERA_REQUEST = 1004
+        private const val PERMISSION_REQUEST = 1005
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -83,43 +82,48 @@ class ChatActivity : AppCompatActivity() {
 
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
-                R.id.action_voice_call -> {
-                    startCall("voice")
-                    true
-                }
-                R.id.action_video_call -> {
-                    startCall("video")
-                    true
-                }
-                R.id.action_contact_info -> {
-                    showToast("Info de contacto")
-                    true
-                }
+                R.id.action_voice_call -> { startCall("voice"); true }
+                R.id.action_video_call -> { startCall("video"); true }
+                R.id.action_contact_info -> { showToast("Info de contacto"); true }
                 else -> false
             }
         }
     }
 
     private fun startCall(type: String) {
-        val intent = Intent(this, CallActivity::class.java).apply {
+        startActivity(Intent(this, CallActivity::class.java).apply {
             putExtra("receiverId", receiverId)
             putExtra("receiverName", receiverName)
             putExtra("receiverAvatar", receiverAvatar)
             putExtra("callType", type)
-        }
-        startActivity(intent)
+        })
     }
 
     private fun setupRecyclerView() {
-        adapter = ChatAdapter(
-            onMessageLongClick = { message, view ->
-                showMessageOptions(message, view)
-            }
-        )
+        adapter = ChatAdapter(messages) { message, view ->
+            showMessageOptions(message, view)
+        }
         binding.recyclerViewMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
         binding.recyclerViewMessages.adapter = adapter
+    }
+
+    /** Agrega un mensaje a la lista y refresca el adapter */
+    private fun addMessage(msg: LocalMessage) {
+        messages.add(msg)
+        adapter.notifyItemInserted(messages.size - 1)
+        binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
+    }
+
+    /** Reemplaza toda la lista y refresca */
+    private fun setMessages(list: List<LocalMessage>) {
+        messages.clear()
+        messages.addAll(list)
+        adapter.refresh()
+        if (messages.isNotEmpty()) {
+            binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
+        }
     }
 
     private fun showMessageOptions(message: LocalMessage, view: View) {
@@ -136,18 +140,12 @@ class ChatActivity : AppCompatActivity() {
                     binding.etMessage.requestFocus()
                     true
                 }
-                R.id.action_forward -> {
-                    showToast("Reenviar mensaje")
-                    true
-                }
-                R.id.action_delete -> {
-                    deleteMessage(message.id)
-                    true
-                }
+                R.id.action_forward -> { showToast("Reenviar mensaje"); true }
+                R.id.action_delete -> { deleteMessage(message.id); true }
                 R.id.action_copy -> {
                     message.content?.let {
-                        val clipboard = getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                        clipboard.setPrimaryClip(android.content.ClipData.newPlainText("Mensaje", it))
+                        (getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager)
+                            .setPrimaryClip(android.content.ClipData.newPlainText("Mensaje", it))
                         showToast("Mensaje copiado")
                     }
                     true
@@ -159,13 +157,8 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun setupListeners() {
-        binding.btnSend.setOnClickListener {
-            sendMessage()
-        }
-
-        binding.ivAttach.setOnClickListener {
-            showAttachmentOptions()
-        }
+        binding.btnSend.setOnClickListener { sendMessage() }
+        binding.ivAttach.setOnClickListener { showAttachmentOptions() }
 
         binding.replyPreview.btnCloseReply.setOnClickListener {
             replyingTo = null
@@ -174,11 +167,8 @@ class ChatActivity : AppCompatActivity() {
 
         binding.etMessage.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEND) {
-                sendMessage()
-                true
-            } else {
-                false
-            }
+                sendMessage(); true
+            } else false
         }
 
         binding.etMessage.addTextChangedListener(object : android.text.TextWatcher {
@@ -199,23 +189,18 @@ class ChatActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
-                PERMISSION_REQUEST
-            )
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), PERMISSION_REQUEST)
             return
         }
-
-        val options = arrayOf("Cámara", "Galería", "Documento", "Ubicación")
+        val options = arrayOf("Cámara", "Galería", "Video", "Documento")
         android.app.AlertDialog.Builder(this)
             .setTitle("Adjuntar")
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> openCamera()
                     1 -> openGallery()
-                    2 -> openFilePicker()
-                    3 -> showToast("Ubicación no disponible aún")
+                    2 -> openVideoPicker()
+                    3 -> openFilePicker()
                 }
             }
             .show()
@@ -225,11 +210,7 @@ class ChatActivity : AppCompatActivity() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED
         ) {
-            ActivityCompat.requestPermissions(
-                this,
-                arrayOf(Manifest.permission.CAMERA),
-                PERMISSION_REQUEST
-            )
+            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.CAMERA), PERMISSION_REQUEST)
             return
         }
         val cameraIntent = Intent(android.provider.MediaStore.ACTION_IMAGE_CAPTURE)
@@ -237,86 +218,103 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun openGallery() {
-        val intent = Intent(Intent.ACTION_PICK).apply {
-            type = "image/*"
-        }
-        startActivityForResult(intent, PICK_IMAGE)
+        startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "image/*" }, PICK_IMAGE)
+    }
+
+    private fun openVideoPicker() {
+        startActivityForResult(Intent(Intent.ACTION_PICK).apply { type = "video/*" }, PICK_VIDEO)
     }
 
     private fun openFilePicker() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT).apply {
+        startActivityForResult(Intent(Intent.ACTION_GET_CONTENT).apply {
             type = "*/*"
             addCategory(Intent.CATEGORY_OPENABLE)
-        }
-        startActivityForResult(intent, PICK_FILE)
+        }, PICK_FILE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && data != null) {
             when (requestCode) {
-                PICK_IMAGE -> {
-                    val imageUri: Uri? = data.data
-                    imageUri?.let { uploadAndSendMedia(it, "image") }
-                }
-                PICK_FILE -> {
-                    val fileUri: Uri? = data.data
-                    fileUri?.let { uploadAndSendMedia(it, "document") }
-                }
+                PICK_IMAGE -> data.data?.let { uploadAndSendMedia(it, "image") }
+                PICK_VIDEO -> data.data?.let { uploadAndSendMedia(it, "video") }
+                PICK_FILE -> data.data?.let { uploadAndSendMedia(it, "document") }
                 CAMERA_REQUEST -> {
                     val photo = data.extras?.get("data") as? android.graphics.Bitmap
-                    photo?.let { showToast("Imagen capturada") }
+                    if (photo != null) {
+                        // Guardar bitmap temporal y subir como imagen
+                        val file = java.io.File(cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+                        file.outputStream().use { photo.compress(android.graphics.Bitmap.CompressFormat.JPEG, 80, it) }
+                        uploadFile(file, "image/jpeg", "image")
+                    }
                 }
             }
         }
     }
 
     private fun uploadAndSendMedia(uri: Uri, type: String) {
-        showToast("Subiendo medio...")
+        showToast("Subiendo...")
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val inputStream = contentResolver.openInputStream(uri) ?: return@launch
                 val file = java.io.File(cacheDir, "upload_${System.currentTimeMillis()}")
-                file.outputStream().use { out ->
-                    inputStream.copyTo(out)
-                }
+                file.outputStream().use { out -> inputStream.copyTo(out) }
                 inputStream.close()
+                val mimeType = contentResolver.getType(uri) ?: when (type) {
+                    "video" -> "video/mp4"
+                    else -> "image/jpeg"
+                }
+                uploadFile(file, mimeType, type)
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) { showToast("Error al subir: ${e.message}") }
+            }
+        }
+    }
 
-                val mediaTypeStr = contentResolver.getType(uri) ?: "image/*"
-                val mediaType = mediaTypeStr.toMediaType()
+    private fun uploadFile(file: java.io.File, mimeType: String, type: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val mediaType = mimeType.toMediaType()
                 val requestFile = file.asRequestBody(mediaType)
                 val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
                     val data = response.body()?.data
                     if (data != null) {
-                        val mediaUrl = appGson.toJson(data).trim('"')
+                        // El servidor retorna la URL del archivo
+                        val mediaUrl = data.toString().trim('"')
                         sendMediaMessage(mediaUrl, type)
+                    } else {
+                        withContext(Dispatchers.Main) { showToast("Error: respuesta vacía del servidor") }
                     }
                 } else {
-                    withContext(Dispatchers.Main) { showToast("Error al subir") }
+                    withContext(Dispatchers.Main) { showToast("Error al subir archivo") }
                 }
                 file.delete()
             } catch (e: Exception) {
-                withContext(Dispatchers.Main) { showToast("Error: ${e.message}") }
+                withContext(Dispatchers.Main) {
+                    if (!NetworkMonitor.isConnected.value) {
+                        showToast("Sin conexión. No se puede subir el archivo.")
+                    } else {
+                        showToast("Error: ${e.message}")
+                    }
+                }
             }
         }
     }
 
     private fun sendMediaMessage(mediaUrl: String, type: String) {
-        val request = SendMessageRequest(
+        sendMessageToServer(SendMessageRequest(
             receiverId = receiverId,
             content = null,
             messageType = type,
             mediaUrl = mediaUrl
-        )
-        sendMessageToServer(request)
+        ))
     }
 
     private fun sendMessage() {
         val content = binding.etMessage.text.toString().trim()
         if (content.isEmpty()) return
-
         binding.etMessage.text?.clear()
 
         val request = SendMessageRequest(
@@ -325,17 +323,14 @@ class ChatActivity : AppCompatActivity() {
             messageType = "text",
             replyTo = replyingTo?.id
         )
-
         replyingTo = null
         binding.replyPreview.root.gone()
-
         sendMessageToServer(request)
     }
 
     /**
-     * Envía un mensaje al servidor. Si no hay conexión,
-     * lo guarda localmente como pendiente y se enviará
-     * automáticamente cuando se restaure la conexión.
+     * Envía un mensaje al servidor. Lo muestra inmediatamente en la UI.
+     * Si no hay conexión, lo guarda como pendiente.
      */
     private fun sendMessageToServer(request: SendMessageRequest) {
         val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
@@ -344,7 +339,7 @@ class ChatActivity : AppCompatActivity() {
             .apply { timeZone = TimeZone.getTimeZone("UTC") }
             .format(Date())
 
-        // Crear mensaje local optimista (se muestra inmediatamente)
+        // Crear mensaje local optimista
         val localMsg = LocalMessage(
             id = tempId,
             conversationId = conversationId,
@@ -357,75 +352,67 @@ class ChatActivity : AppCompatActivity() {
             createdAt = timestamp,
             senderName = TokenManager.getInstance().getUser()?.name,
             senderAvatar = TokenManager.getInstance().getUser()?.avatar,
-            status = NetworkMonitor.isConnected.value.let { if (it) "sending" else "pending" }
+            status = if (NetworkMonitor.isServerReachable.value) "sending" else "pending"
         )
 
-        // Mostrar inmediatamente en la UI
-        runOnUiThread {
-            messages.add(localMsg)
-            adapter.notifyItemInserted(messages.size - 1)
-            binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
-        }
+        // Mostrar inmediatamente
+        addMessage(localMsg)
 
-        // Guardar localmente siempre (para uso offline)
+        // Guardar en SQLite local
         CoroutineScope(Dispatchers.IO).launch {
             OfflineSyncManager.db?.insertMessage(localMsg)
-        }
 
-        // Enviar en background
-        CoroutineScope(Dispatchers.IO).launch {
+            // Intentar enviar al servidor
             val result = OfflineSyncManager.sendOrQueueMessage(request)
             withContext(Dispatchers.Main) {
                 if (result != null) {
-                    // El mensaje se envió correctamente, reemplazar el temporal con el del servidor
+                    // Reemplazar temporal con respuesta del servidor
                     val index = messages.indexOfFirst { it.id == tempId }
                     if (index >= 0) {
-                        messages.removeAt(index)
-                        val serverLocal = OfflineSyncManager.toLocalMessage(result, "sent")
-                        messages.add(serverLocal)
-                        adapter.notifyDataSetChanged()
-                        binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
+                        val serverMsg = OfflineSyncManager.toLocalMessage(result, "sent")
+                        messages[index] = serverMsg
+                        adapter.notifyItemChanged(index)
 
-                        // Actualizar conversationId si era nuevo
                         if (conversationId.isEmpty()) {
                             conversationId = result.conversationId
                         }
                     }
-                } else if (!NetworkMonitor.isConnected.value) {
-                    // Sin conexión - ya está guardado como pending
-                    showToast("Sin conexión. El mensaje se enviará automáticamente.")
+                } else if (!NetworkMonitor.isServerReachable.value) {
+                    // Marcar como pendiente
+                    val index = messages.indexOfFirst { it.id == tempId }
+                    if (index >= 0) {
+                        messages[index] = messages[index].copy(status = "pending")
+                        adapter.notifyItemChanged(index)
+                    }
+                    showToast("Sin conexión. Se enviará automáticamente.")
                 } else {
-                    showToast("Error al enviar mensaje")
+                    val index = messages.indexOfFirst { it.id == tempId }
+                    if (index >= 0) {
+                        messages[index] = messages[index].copy(status = "failed")
+                        adapter.notifyItemChanged(index)
+                    }
                 }
             }
         }
     }
 
     /**
-     * Carga los mensajes de la conversación.
-     * Primero muestra los locales, luego sincroniza con el servidor.
+     * Carga mensajes: locales primero, luego sincroniza con servidor si hay conexión.
      */
     private fun loadMessages() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Cargar desde base local (inmediato)
+                // 1. Cargar de SQLite local (inmediato)
                 val localMessages = if (conversationId.isNotEmpty()) {
                     OfflineSyncManager.getMessages(conversationId)
-                } else {
-                    emptyList()
-                }
+                } else emptyList()
 
                 withContext(Dispatchers.Main) {
-                    messages.clear()
-                    messages.addAll(localMessages)
-                    adapter.submitList(messages)
-                    if (messages.isNotEmpty()) {
-                        binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
-                    }
+                    setMessages(localMessages)
                 }
 
-                // Si hay conexión, sincronizar con el servidor
-                if (NetworkMonitor.isConnected.value && conversationId.isNotEmpty()) {
+                // 2. Sincronizar con servidor si hay conexión
+                if (NetworkMonitor.isServerReachable.value && conversationId.isNotEmpty()) {
                     try {
                         val response = ApiClient.messagesApi.getMessages(conversationId)
                         if (response.isSuccessful) {
@@ -434,40 +421,27 @@ class ChatActivity : AppCompatActivity() {
                                 val type = object : TypeToken<List<Message>>() {}.type
                                 val serverMessages: List<Message> = appGson.fromJson(appGson.toJson(data), type)
 
-                                // Combinar mensajes del servidor con pendientes locales
                                 val pending = OfflineSyncManager.db?.getPendingMessages() ?: emptyList()
                                 val serverIds = serverMessages.map { it.id }.toSet()
                                 val localToKeep = pending.filter { it.id !in serverIds }
 
-                                val allMessages = serverMessages.map {
+                                val allMessages = (serverMessages.map {
                                     OfflineSyncManager.toLocalMessage(it, "sent")
-                                } + localToKeep
-
-                                // Ordenar por fecha
-                                val sorted = allMessages.sortedBy { it.createdAt }
+                                } + localToKeep).sortedBy { it.createdAt }
 
                                 withContext(Dispatchers.Main) {
-                                    messages.clear()
-                                    messages.addAll(sorted)
-                                    adapter.submitList(messages)
-                                    if (messages.isNotEmpty()) {
-                                        binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
-                                    }
+                                    setMessages(allMessages)
                                 }
-                                hasLoadedFromServer = true
                             }
                         }
                     } catch (e: Exception) {
-                        android.util.Log.d("ChatActivity", "No se pudo sincronizar con servidor: ${e.message}")
-                        // Ya se mostraron los mensajes locales, no hay error
+                        android.util.Log.d("ChatActivity", "No se pudo sincronizar: ${e.message}")
                     }
                 }
 
-                // Marcar como leídos
                 markMessagesAsRead()
             } catch (e: Exception) {
-                android.util.Log.d("ChatActivity", "Error cargando mensajes: ${e.message}")
-                // No mostrar error al usuario - los mensajes locales ya se cargaron
+                android.util.Log.d("ChatActivity", "Error cargando: ${e.message}")
             }
         }
     }
@@ -478,18 +452,12 @@ class ChatActivity : AppCompatActivity() {
 
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                // Marcar en base local
                 OfflineSyncManager.markAllAsReadLocal(conversationId, currentUserId)
-
-                // Marcar en servidor (si hay conexión)
                 val unread = messages.filter { !it.read && it.senderId != currentUserId }
-                if (NetworkMonitor.isConnected.value && unread.isNotEmpty()) {
+                if (NetworkMonitor.isServerReachable.value && unread.isNotEmpty()) {
                     unread.forEach { msg ->
-                        try {
-                            ApiClient.messagesApi.markRead(msg.id)
-                        } catch (_: Exception) {}
+                        try { ApiClient.messagesApi.markRead(msg.id) } catch (_: Exception) {}
                     }
-                    // Notificar al otro usuario via socket
                     SocketManager.emit("message_read", JSONObject().apply {
                         put("messageId", unread.first().id)
                         put("senderId", currentUserId)
@@ -500,59 +468,47 @@ class ChatActivity : AppCompatActivity() {
     }
 
     private fun deleteMessage(messageId: String) {
+        val index = messages.indexOfFirst { it.id == messageId }
+        if (index < 0) return
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
-                if (NetworkMonitor.isConnected.value) {
-                    val response = ApiClient.messagesApi.deleteMessage(messageId)
-                    if (response.isSuccessful) {
-                        OfflineSyncManager.db?.softDelete(messageId)
-                        withContext(Dispatchers.Main) {
-                            val index = messages.indexOfFirst { it.id == messageId }
-                            if (index >= 0) {
+                if (NetworkMonitor.isServerReachable.value) {
+                    try {
+                        val response = ApiClient.messagesApi.deleteMessage(messageId)
+                        if (response.isSuccessful) {
+                            OfflineSyncManager.db?.softDelete(messageId)
+                            withContext(Dispatchers.Main) {
                                 messages.removeAt(index)
                                 adapter.notifyItemRemoved(index)
                             }
+                            return@launch
                         }
-                    }
-                } else {
-                    // Sin conexión - eliminar solo localmente
-                    OfflineSyncManager.db?.softDelete(messageId)
-                    withContext(Dispatchers.Main) {
-                        val index = messages.indexOfFirst { it.id == messageId }
-                        if (index >= 0) {
-                            messages.removeAt(index)
-                            adapter.notifyItemRemoved(index)
-                        }
-                    }
+                    } catch (_: Exception) {}
                 }
-            } catch (_: Exception) {
+                // Sin conexión o error — eliminar solo localmente
+                OfflineSyncManager.db?.softDelete(messageId)
                 withContext(Dispatchers.Main) {
-                    val index = messages.indexOfFirst { it.id == messageId }
-                    if (index >= 0) {
-                        messages.removeAt(index)
-                        adapter.notifyItemRemoved(index)
-                    }
+                    messages.removeAt(index)
+                    adapter.notifyItemRemoved(index)
                 }
-            }
+            } catch (_: Exception) {}
         }
     }
 
     private fun setupSocketListeners() {
         val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
 
-        // Escuchar mensajes nuevos dirigidos a este usuario
         SocketManager.on("message_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
             try {
                 val message = appGson.fromJson(data.toString(), Message::class.java)
                 if (message.conversationId == conversationId || message.senderId == receiverId) {
                     runOnUiThread {
-                        // Guardar en base local
                         CoroutineScope(Dispatchers.IO).launch {
                             OfflineSyncManager.saveReceivedMessage(message)
                         }
 
-                        // Mostrar en la UI
                         val localMsg = LocalMessage(
                             id = message.id,
                             conversationId = message.conversationId,
@@ -570,13 +526,8 @@ class ChatActivity : AppCompatActivity() {
                             status = "sent"
                         )
 
-                        val exists = messages.any { it.id == message.id }
-                        if (!exists) {
-                            messages.add(localMsg)
-                            adapter.notifyItemInserted(messages.size - 1)
-                            binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
-
-                            // Actualizar conversationId si era nuevo
+                        if (messages.none { it.id == message.id }) {
+                            addMessage(localMsg)
                             if (conversationId.isEmpty()) {
                                 conversationId = message.conversationId
                             }
@@ -584,29 +535,23 @@ class ChatActivity : AppCompatActivity() {
                         markMessagesAsRead()
                     }
                 }
-            } catch (e: Exception) {
-                // Ignorar errores de parseo
-            }
+            } catch (_: Exception) {}
         }
 
-        // Escuchar indicadores de escritura
         SocketManager.on("typing_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
-            val typingUserId = data.optString("userId", "")
-            if (typingUserId == receiverId) {
+            if (data.optString("userId", "") == receiverId) {
                 runOnUiThread { binding.tvTypingIndicator.visible() }
             }
         }
 
         SocketManager.on("stop_typing_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
-            val typingUserId = data.optString("userId", "")
-            if (typingUserId == receiverId) {
+            if (data.optString("userId", "") == receiverId) {
                 runOnUiThread { binding.tvTypingIndicator.gone() }
             }
         }
 
-        // Escuchar confirmación de lectura
         SocketManager.on("message_read_$currentUserId") { args ->
             val data = args.firstOrNull() as? JSONObject ?: return@on
             val messageId = data.optString("messageId", "")
@@ -620,23 +565,21 @@ class ChatActivity : AppCompatActivity() {
         }
     }
 
-    private fun messageToMessage(localMsg: LocalMessage): Message {
-        return Message(
-            id = localMsg.id,
-            conversationId = localMsg.conversationId,
-            senderId = localMsg.senderId,
-            receiverId = localMsg.receiverId,
-            content = localMsg.content,
-            messageType = localMsg.messageType,
-            mediaUrl = localMsg.mediaUrl,
-            replyTo = localMsg.replyTo,
-            forwarded = localMsg.forwarded,
-            read = localMsg.read,
-            deleted = localMsg.deleted,
-            createdAt = localMsg.createdAt,
-            sender = com.civis.app.data.model.User(name = localMsg.senderName ?: "", avatar = localMsg.senderAvatar)
-        )
-    }
+    private fun messageToMessage(localMsg: LocalMessage) = Message(
+        id = localMsg.id,
+        conversationId = localMsg.conversationId,
+        senderId = localMsg.senderId,
+        receiverId = localMsg.receiverId,
+        content = localMsg.content,
+        messageType = localMsg.messageType,
+        mediaUrl = localMsg.mediaUrl,
+        replyTo = localMsg.replyTo,
+        forwarded = localMsg.forwarded,
+        read = localMsg.read,
+        deleted = localMsg.deleted,
+        createdAt = localMsg.createdAt,
+        sender = com.civis.app.data.model.User(name = localMsg.senderName ?: "", avatar = localMsg.senderAvatar)
+    )
 
     override fun onDestroy() {
         super.onDestroy()

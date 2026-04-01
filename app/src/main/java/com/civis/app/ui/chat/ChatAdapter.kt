@@ -15,10 +15,10 @@ import com.civis.app.utils.formatTime
 import com.civis.app.utils.toGlideUrl
 
 class ChatAdapter(
+    private val messages: MutableList<LocalMessage>,
     private val onMessageLongClick: (LocalMessage, View) -> Unit
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
 
-    private val messages = mutableListOf<LocalMessage>()
     private val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
 
     companion object {
@@ -26,13 +26,11 @@ class ChatAdapter(
         const val TYPE_RECEIVED_TEXT = 1
         const val TYPE_SENT_IMAGE = 2
         const val TYPE_RECEIVED_IMAGE = 3
+        const val TYPE_SENT_FILE = 4
+        const val TYPE_RECEIVED_FILE = 5
     }
 
-    fun submitList(list: List<LocalMessage>) {
-        messages.clear()
-        messages.addAll(list)
-        notifyDataSetChanged()
-    }
+    fun refresh() = notifyDataSetChanged()
 
     override fun getItemViewType(position: Int): Int {
         val message = messages[position]
@@ -40,6 +38,8 @@ class ChatAdapter(
         return when {
             message.messageType == "image" && isMine -> TYPE_SENT_IMAGE
             message.messageType == "image" && !isMine -> TYPE_RECEIVED_IMAGE
+            message.messageType == "document" && isMine -> TYPE_SENT_FILE
+            message.messageType == "document" && !isMine -> TYPE_RECEIVED_FILE
             isMine -> TYPE_SENT_TEXT
             else -> TYPE_RECEIVED_TEXT
         }
@@ -52,7 +52,7 @@ class ChatAdapter(
             TYPE_RECEIVED_TEXT -> ReceivedViewHolder(ItemMessageReceivedBinding.inflate(inflater, parent, false))
             TYPE_SENT_IMAGE -> ImageViewHolder(ItemMessageImageBinding.inflate(inflater, parent, false))
             TYPE_RECEIVED_IMAGE -> ImageViewHolder(ItemMessageImageBinding.inflate(inflater, parent, false))
-            else -> ReceivedViewHolder(ItemMessageReceivedBinding.inflate(inflater, parent, false))
+            else -> SentViewHolder(ItemMessageSentBinding.inflate(inflater, parent, false))
         }
     }
 
@@ -71,7 +71,6 @@ class ChatAdapter(
         binding.tvMessageContent.text = if (message.deleted) "Este mensaje fue eliminado" else message.content
         binding.tvTime.text = message.createdAt?.formatTime() ?: ""
 
-        // Estado del mensaje: pendiente, enviando, enviado, leído
         when {
             message.status == "pending" -> {
                 binding.ivReadReceipt.setImageResource(R.drawable.ic_clock)

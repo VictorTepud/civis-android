@@ -32,9 +32,9 @@ object OfflineSyncManager {
 
     private fun observeNetworkChanges() {
         scope?.launch {
-            NetworkMonitor.isConnected.collect { connected ->
-                if (connected) {
-                    Log.d(TAG, "Conexión restaurada, sincronizando mensajes pendientes...")
+            NetworkMonitor.isServerReachable.collect { reachable ->
+                if (reachable) {
+                    Log.d(TAG, "Servidor disponible, sincronizando mensajes pendientes...")
                     syncPendingMessages()
                 }
             }
@@ -81,7 +81,7 @@ object OfflineSyncManager {
         val tempId = UUID.randomUUID().toString()
         val currentUserId = TokenManager.getInstance().getUser()?.id ?: ""
 
-        if (NetworkMonitor.isConnected.value) {
+        if (NetworkMonitor.isServerReachable.value) {
             try {
                 val response = ApiClient.messagesApi.sendMessage(request)
                 if (response.isSuccessful) {
@@ -233,7 +233,7 @@ object OfflineSyncManager {
         val database = db ?: return emptyList()
 
         // Mostrar locales primero
-        if (NetworkMonitor.isConnected.value) {
+        if (NetworkMonitor.isServerReachable.value) {
             try {
                 val response = ApiClient.messagesApi.getMessages(conversationId)
                 if (response.isSuccessful) {

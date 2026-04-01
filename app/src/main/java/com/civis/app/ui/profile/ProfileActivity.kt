@@ -145,9 +145,13 @@ class ProfileActivity : AppCompatActivity() {
                     val body = okhttp3.MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)
                     if (uploadResponse.isSuccessful) {
-                        val data = uploadResponse.body()?.data
-                        val dataMap = data as? Map<*, *>
+                        val rawData = uploadResponse.body()?.data
+                        android.util.Log.e("ProfileActivity", "Upload response data: $rawData")
+                        val dataMap = rawData as? Map<*, *>
                         avatarUrl = dataMap?.get("url") as? String
+                        android.util.Log.e("ProfileActivity", "Extracted avatarUrl: $avatarUrl")
+                    } else {
+                        android.util.Log.e("ProfileActivity", "Upload failed: ${uploadResponse.code()} ${uploadResponse.message()}")
                     }
                     tempFile.delete()
                 }

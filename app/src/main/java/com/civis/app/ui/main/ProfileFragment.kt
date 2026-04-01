@@ -34,6 +34,11 @@ class ProfileFragment : Fragment() {
         }
     }
 
+    override fun onResume() {
+        super.onResume()
+        loadUserInfo()
+    }
+
     private fun loadUserInfo() {
         val user = TokenManager.getInstance().getUser()
         if (user != null) {
@@ -47,6 +52,8 @@ class ProfileFragment : Fragment() {
                     .load(user.avatar.toGlideUrl())
                     .placeholder(com.civis.app.R.drawable.ic_profile)
                     .into(binding.ivAvatar)
+            } else {
+                binding.ivAvatar.setImageResource(com.civis.app.R.drawable.ic_profile)
             }
         }
     }

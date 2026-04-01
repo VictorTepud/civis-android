@@ -43,7 +43,7 @@ class ChannelChatActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { finish() }
 
-        val adapter = com.civis.app.ui.chat.ChatAdapter(onMessageLongClick = { _, _ -> })
+        val adapter = com.civis.app.ui.chat.ChatAdapter(messages, onMessageLongClick = { _, _ -> })
         binding.recyclerViewMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }
@@ -73,7 +73,7 @@ class ChannelChatActivity : AppCompatActivity() {
                         val localMsg = OfflineSyncManager.toLocalMessage(msg, "sent")
                         withContext(Dispatchers.Main) {
                             messages.add(localMsg)
-                            (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
+                            adapter.refresh()
                             binding.recyclerViewMessages.scrollToPosition(messages.size - 1)
                         }
                     }
@@ -89,7 +89,7 @@ class ChannelChatActivity : AppCompatActivity() {
             try {
                 // Los canales usan un endpoint diferente, por ahora mostramos vacío
                 withContext(Dispatchers.Main) {
-                    (binding.recyclerViewMessages.adapter as? com.civis.app.ui.chat.ChatAdapter)?.submitList(messages)
+                    adapter.refresh()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) { showToast("Error al cargar mensajes") }

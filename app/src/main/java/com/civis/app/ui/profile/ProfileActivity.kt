@@ -131,14 +131,20 @@ class ProfileActivity : AppCompatActivity() {
             try {
                 var avatarUrl: String? = null
                 if (selectedAvatarUri != null) {
-                    val file = java.io.File(selectedAvatarUri!!.path ?: return@launch)
-                    val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/*").toMediaType()
-                    val requestFile = file.asRequestBody(mediaType)
-                    val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                    val inputStream = contentResolver.openInputStream(selectedAvatarUri!!) ?: return@launch
+                    val tempFile = java.io.File(cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
+                    tempFile.outputStream().use { out -> inputStream.copyTo(out) }
+                    inputStream.close()
+                    val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/jpeg").toMediaType()
+                    val requestFile = tempFile.asRequestBody(mediaType)
+                    val body = okhttp3.MultipartBody.Part.createFormData("avatar", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)
                     if (uploadResponse.isSuccessful) {
-                        avatarUrl = uploadResponse.body()?.data?.toString()
+                        val data = uploadResponse.body()?.data
+                        val dataMap = data as? Map<*, *>
+                        avatarUrl = dataMap?.get("url") as? String
                     }
+                    tempFile.delete()
                 }
 
                 val request = UpdateProfileRequest(
@@ -155,7 +161,7 @@ class ProfileActivity : AppCompatActivity() {
                     if (response.isSuccessful) {
                         showToast("Perfil actualizado")
                         val user = TokenManager.getInstance().getUser()?.copy(
-                            name = name, bio = bio, phone = phone
+                            name = name, bio = bio, phone = phone, avatar = avatarUrl
                         )
                         if (user != null) TokenManager.getInstance().saveUser(user)
                         finish()

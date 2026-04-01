@@ -276,13 +276,13 @@ class ChatActivity : AppCompatActivity() {
             try {
                 val mediaType = mimeType.toMediaType()
                 val requestFile = file.asRequestBody(mediaType)
-                val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                val body = okhttp3.MultipartBody.Part.createFormData("media", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
-                    val data = response.body()?.data
-                    if (data != null) {
-                        // El servidor retorna la URL del archivo
-                        val mediaUrl = data.toString().trim('"')
+                    val responseData = response.body()?.data
+                    val dataMap = responseData as? Map<*, *>
+                    val mediaUrl = dataMap?.get("url") as? String
+                    if (mediaUrl != null) {
                         sendMediaMessage(mediaUrl, type)
                     } else {
                         withContext(Dispatchers.Main) { showToast("Error: respuesta vacía del servidor") }

@@ -24,6 +24,7 @@ import org.json.JSONObject
 class ChannelChatActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityChannelChatBinding
+    private lateinit var adapter: com.civis.app.ui.chat.ChatAdapter
     private val messages = mutableListOf<LocalMessage>()
     private var communityId: String = ""
     private var channelId: String = ""
@@ -43,7 +44,7 @@ class ChannelChatActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         binding.toolbar.setNavigationOnClickListener { finish() }
 
-        val adapter = com.civis.app.ui.chat.ChatAdapter(messages, onMessageLongClick = { _, _ -> })
+        adapter = com.civis.app.ui.chat.ChatAdapter(messages, onMessageLongClick = { _, _ -> })
         binding.recyclerViewMessages.layoutManager = LinearLayoutManager(this).apply {
             stackFromEnd = true
         }

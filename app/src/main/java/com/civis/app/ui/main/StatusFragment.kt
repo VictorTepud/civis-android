@@ -224,5 +224,5 @@ private fun String.formatStatusTime(): String {
                 else -> SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(date)
             }
         } else this
-    } catch (e: Exception) this
+    } catch (e: Exception) { this }
 }

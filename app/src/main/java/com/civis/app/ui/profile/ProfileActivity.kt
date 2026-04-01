@@ -42,7 +42,7 @@ class ProfileActivity : AppCompatActivity() {
         if (granted) {
             pickImageLauncher.launch("image/*")
         } else {
-            showToast("Permiso denegado para acceder a imágenes")
+            showToast("Permiso denegado para acceder a imagenes")
         }
     }
 
@@ -117,8 +117,6 @@ class ProfileActivity : AppCompatActivity() {
         }
     }
 
-    // onActivityResult ya no es necesario — se usa Activity Result API
-
     private fun saveProfile() {
         val name = binding.etName.text.toString().trim()
         val bio = binding.etBio.text.toString().trim()
@@ -132,61 +130,128 @@ class ProfileActivity : AppCompatActivity() {
         binding.progressBar.visibility = View.VISIBLE
         binding.btnSave.isEnabled = false
 
+        android.util.Log.e("ProfileActivity", "=== INICIO saveProfile ===")
+        android.util.Log.e("ProfileActivity", "selectedAvatarUri: $selectedAvatarUri")
+
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 var avatarUrl: String? = null
+
                 if (selectedAvatarUri != null) {
-                    val inputStream = contentResolver.openInputStream(selectedAvatarUri!!) ?: return@launch
+                    android.util.Log.e("ProfileActivity", "PASO 1: Abriendo inputStream...")
+                    val inputStream = contentResolver.openInputStream(selectedAvatarUri!!)
+                    if (inputStream == null) {
+                        android.util.Log.e("ProfileActivity", "ERROR: No se pudo abrir inputStream del URI")
+                        withContext(Dispatchers.Main) {
+                            binding.progressBar.visibility = View.GONE
+                            binding.btnSave.isEnabled = true
+                            showToast("Error al leer la imagen seleccionada")
+                        }
+                        return@launch
+                    }
+
+                    android.util.Log.e("ProfileActivity", "PASO 2: Creando tempFile...")
                     val tempFile = java.io.File(cacheDir, "avatar_${System.currentTimeMillis()}.jpg")
                     tempFile.outputStream().use { out -> inputStream.copyTo(out) }
                     inputStream.close()
+                    android.util.Log.e("ProfileActivity", "PASO 2: tempFile creado, size=${tempFile.length()} bytes")
+
                     val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/jpeg").toMediaType()
                     val requestFile = tempFile.asRequestBody(mediaType)
+
+                    android.util.Log.e("ProfileActivity", "PASO 3: Creando MultipartBody con field='file'...")
                     val body = okhttp3.MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
+
+                    android.util.Log.e("ProfileActivity", "PASO 4: Enviando uploadAvatar...")
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)
+                    android.util.Log.e("ProfileActivity", "PASO 4: Upload response code=${uploadResponse.code()}, message=${uploadResponse.message()}")
+                    android.util.Log.e("ProfileActivity", "PASO 4: Upload response body=${uploadResponse.body()}")
+                    android.util.Log.e("ProfileActivity", "PASO 4: Upload errorBody=${uploadResponse.errorBody()?.string()}")
+
                     if (uploadResponse.isSuccessful) {
                         val rawData = uploadResponse.body()?.data
-                        android.util.Log.e("ProfileActivity", "Upload response data: $rawData")
-                        val dataMap = rawData as? Map<*, *>
-                        avatarUrl = dataMap?.get("url") as? String
-                        android.util.Log.e("ProfileActivity", "Extracted avatarUrl: $avatarUrl")
+                        android.util.Log.e("ProfileActivity", "PASO 5: rawData type=${rawData?.javaClass?.name}, value=$rawData")
+                        
+                        // Probar multiples formas de extraer la URL
+                        when (rawData) {
+                            is Map<*, *> -> {
+                                avatarUrl = rawData["url"] as? String
+                                android.util.Log.e("ProfileActivity", "PASO 5a: Extraido de Map, avatarUrl=$avatarUrl")
+                            }
+                            is com.google.gson.JsonObject -> {
+                                avatarUrl = rawData.get("url")?.asString
+                                android.util.Log.e("ProfileActivity", "PASO 5b: Extraido de JsonObject, avatarUrl=$avatarUrl")
+                            }
+                            is String -> {
+                                // Si data viene como string JSON
+                                try {
+                                    val jsonObj = org.json.JSONObject(rawData)
+                                    avatarUrl = jsonObj.optString("url", null)
+                                    android.util.Log.e("ProfileActivity", "PASO 5c: Extraido de String JSON, avatarUrl=$avatarUrl")
+                                } catch (e: Exception) {
+                                    android.util.Log.e("ProfileActivity", "PASO 5c: Error parseando string: ${e.message}")
+                                }
+                            }
+                            else -> {
+                                // Ultimo intento: serializar con appGson
+                                try {
+                                    val jsonStr = appGson.toJson(rawData)
+                                    val jsonObj = org.json.JSONObject(jsonStr)
+                                    avatarUrl = jsonObj.optString("url", null)
+                                    android.util.Log.e("ProfileActivity", "PASO 5d: Extraido via appGson serialize, jsonStr=$jsonStr, avatarUrl=$avatarUrl")
+                                } catch (e: Exception) {
+                                    android.util.Log.e("ProfileActivity", "PASO 5d: Error serializando: ${e.message}")
+                                }
+                            }
+                        }
                     } else {
-                        android.util.Log.e("ProfileActivity", "Upload failed: ${uploadResponse.code()} ${uploadResponse.message()}")
+                        android.util.Log.e("ProfileActivity", "UPLOAD FALLO: code=${uploadResponse.code()}")
                     }
+
                     tempFile.delete()
+                } else {
+                    android.util.Log.e("ProfileActivity", "No se selecciono nueva foto, conservando avatar existente")
                 }
+
+                val finalAvatarForRequest = avatarUrl ?: TokenManager.getInstance().getUser()?.avatar
+                android.util.Log.e("ProfileActivity", "PASO 6: Enviando updateProfile con avatar=$finalAvatarForRequest")
 
                 val request = UpdateProfileRequest(
                     name = name,
                     bio = bio.ifEmpty { null },
                     phone = phone.ifEmpty { null },
-                    avatar = avatarUrl ?: TokenManager.getInstance().getUser()?.avatar
+                    avatar = finalAvatarForRequest
                 )
 
                 val response = ApiClient.usersApi.updateProfile(request)
+                android.util.Log.e("ProfileActivity", "PASO 7: updateProfile code=${response.code()}, body=${response.body()}")
+
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     binding.btnSave.isEnabled = true
                     if (response.isSuccessful) {
-                        showToast("Perfil actualizado")
                         val currentUser = TokenManager.getInstance().getUser()
-                        val finalAvatar = avatarUrl ?: currentUser?.avatar
-                        val finalBio = if (bio.isEmpty()) currentUser?.bio else bio
-                        val finalPhone = if (phone.isEmpty()) currentUser?.phone else phone
+                        val savedAvatar = avatarUrl ?: currentUser?.avatar
+                        val savedBio = if (bio.isEmpty()) currentUser?.bio else bio
+                        val savedPhone = if (phone.isEmpty()) currentUser?.phone else phone
                         val user = currentUser?.copy(
-                            name = name, bio = finalBio, phone = finalPhone ?: "", avatar = finalAvatar
+                            name = name, bio = savedBio, phone = savedPhone ?: "", avatar = savedAvatar
                         )
                         if (user != null) TokenManager.getInstance().saveUser(user)
+                        android.util.Log.e("ProfileActivity", "PASO 8: Perfil guardado, avatar final=$savedAvatar")
+                        showToast("Perfil actualizado")
                         finish()
                     } else {
+                        android.util.Log.e("ProfileActivity", "PASO 7: updateProfile FALLO: ${response.code()}")
                         showToast("Error al actualizar perfil")
                     }
                 }
             } catch (e: Exception) {
+                android.util.Log.e("ProfileActivity", "EXCEPCION: ${e.message}", e)
                 withContext(Dispatchers.Main) {
                     binding.progressBar.visibility = View.GONE
                     binding.btnSave.isEnabled = true
-                    showToast("Error de conexión")
+                    showToast("Error de conexion: ${e.message}")
                 }
             }
         }

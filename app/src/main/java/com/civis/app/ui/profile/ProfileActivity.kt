@@ -153,9 +153,11 @@ class ProfileActivity : AppCompatActivity() {
                     android.util.Log.e("ProfileActivity", "Upload code=${uploadResponse.code()} body=${uploadResponse.body()} err=${uploadResponse.errorBody()?.string()}")
 
                     if (uploadResponse.isSuccessful) {
-                        // Servidor devuelve { url: "/uploads/avatars/..." } directamente
-                        avatarUrl = uploadResponse.body()?.url
-                        android.util.Log.e("ProfileActivity", "avatarUrl recibido: $avatarUrl")
+                        // Servidor envuelve en { success: true, data: { url } }
+                        val data = uploadResponse.body()?.data
+                        val dataMap = data as? Map<*, *>
+                        avatarUrl = dataMap?.get("url") as? String
+                        android.util.Log.e("ProfileActivity", "Upload data=$data, avatarUrl=$avatarUrl")
                     } else {
                         android.util.Log.e("ProfileActivity", "Upload fallo: ${uploadResponse.code()}")
                     }

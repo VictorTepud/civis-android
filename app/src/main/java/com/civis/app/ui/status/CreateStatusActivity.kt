@@ -142,7 +142,9 @@ class CreateStatusActivity : AppCompatActivity() {
                     val body = okhttp3.MultipartBody.Part.createFormData("status", tempFile.name, requestFile)
                     val uploadResponse = ApiClient.uploadApi.uploadStatus(body)
                     if (uploadResponse.isSuccessful) {
-                        mediaUrl = uploadResponse.body()?.url
+                        val sData = uploadResponse.body()?.data
+                        val sMap = sData as? Map<*, *>
+                        mediaUrl = sMap?.get("url") as? String
                     }
                     tempFile.delete()
                 }

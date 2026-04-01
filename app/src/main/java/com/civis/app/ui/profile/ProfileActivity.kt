@@ -159,8 +159,8 @@ class ProfileActivity : AppCompatActivity() {
                     val mediaType = (contentResolver.getType(selectedAvatarUri!!) ?: "image/jpeg").toMediaType()
                     val requestFile = tempFile.asRequestBody(mediaType)
 
-                    android.util.Log.e("ProfileActivity", "PASO 3: Creando MultipartBody con field='file'...")
-                    val body = okhttp3.MultipartBody.Part.createFormData("file", tempFile.name, requestFile)
+                    android.util.Log.e("ProfileActivity", "PASO 3: Creando MultipartBody con field='avatar'...")
+                    val body = okhttp3.MultipartBody.Part.createFormData("avatar", tempFile.name, requestFile)
 
                     android.util.Log.e("ProfileActivity", "PASO 4: Enviando uploadAvatar...")
                     val uploadResponse = ApiClient.uploadApi.uploadAvatar(body)

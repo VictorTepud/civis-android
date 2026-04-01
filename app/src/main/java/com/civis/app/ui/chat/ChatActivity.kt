@@ -291,12 +291,10 @@ class ChatActivity : AppCompatActivity() {
             try {
                 val mediaType = mimeType.toMediaType()
                 val requestFile = file.asRequestBody(mediaType)
-                val body = okhttp3.MultipartBody.Part.createFormData("file", file.name, requestFile)
+                val body = okhttp3.MultipartBody.Part.createFormData("media", file.name, requestFile)
                 val response = ApiClient.uploadApi.uploadMedia(body)
                 if (response.isSuccessful) {
-                    val responseData = response.body()?.data
-                    val dataMap = responseData as? Map<*, *>
-                    val mediaUrl = dataMap?.get("url") as? String
+                    val mediaUrl = response.body()?.url
                     if (mediaUrl != null) {
                         sendMediaMessage(mediaUrl, type)
                     } else {

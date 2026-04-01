@@ -1,27 +1,32 @@
 package com.civis.app.data.api
 
-import com.civis.app.data.model.ApiResponse
-import okhttp3.MultipartBody
+import com.google.gson.annotations.SerializedName
 import retrofit2.Response
 import retrofit2.http.Multipart
 import retrofit2.http.POST
 import retrofit2.http.Part
-import retrofit2.http.Query
+import okhttp3.MultipartBody
+
+/** Respuesta directa del servidor: { url: "/uploads/..." } */
+data class UploadResponse(
+    val url: String? = null,
+    val error: String? = null
+)
 
 interface UploadApi {
     @Multipart
-    @POST("upload/")
-    suspend fun uploadAvatar(@Part file: MultipartBody.Part, @Query("type") type: String = "avatar"): Response<ApiResponse>
+    @POST("upload/avatar")
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): Response<UploadResponse>
 
     @Multipart
-    @POST("upload/")
-    suspend fun uploadMedia(@Part file: MultipartBody.Part, @Query("type") type: String = "media"): Response<ApiResponse>
+    @POST("upload/media")
+    suspend fun uploadMedia(@Part media: MultipartBody.Part): Response<UploadResponse>
 
     @Multipart
-    @POST("upload/")
-    suspend fun uploadStatus(@Part file: MultipartBody.Part, @Query("type") type: String = "status"): Response<ApiResponse>
+    @POST("upload/status")
+    suspend fun uploadStatus(@Part status: MultipartBody.Part): Response<UploadResponse>
 
     @Multipart
-    @POST("upload/")
-    suspend fun uploadAttachment(@Part file: MultipartBody.Part, @Query("type") type: String = "media"): Response<ApiResponse>
+    @POST("upload/attachment")
+    suspend fun uploadAttachment(@Part attachment: MultipartBody.Part): Response<UploadResponse>
 }

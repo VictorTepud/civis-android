@@ -23,7 +23,8 @@ object ApiClient {
             if (!token.isNullOrEmpty()) {
                 addHeader("Authorization", "Bearer $token")
             }
-            addHeader("Content-Type", "application/json")
+            // NO agregar Content-Type aqui — OkHttp lo maneja automaticamente.
+            // Para JSON, Retrofit lo pone. Para multipart, OkHttp genera el boundary.
         }.build()
         chain.proceed(request)
     }
@@ -36,8 +37,6 @@ object ApiClient {
         .writeTimeout(30, TimeUnit.SECONDS)
         .build()
 
-    // Gson con LOWER_CASE_WITH_UNDERSCORES: convierte automaticamente
-    // camelCase (Kotlin) <-> snake_case (JSON del servidor)
     private val gson = GsonBuilder()
         .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
         .create()

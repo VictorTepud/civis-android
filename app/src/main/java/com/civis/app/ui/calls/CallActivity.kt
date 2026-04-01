@@ -6,7 +6,6 @@ import android.os.SystemClock
 import android.view.View
 import android.widget.Chronometer
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
 import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.InitiateCallRequest
@@ -15,7 +14,7 @@ import com.civis.app.databinding.ActivityCallBinding
 import com.civis.app.services.CallService
 import com.civis.app.utils.SocketManager
 import com.civis.app.utils.showToast
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 import com.civis.app.utils.appGson
 import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
@@ -51,12 +50,7 @@ class CallActivity : AppCompatActivity() {
         binding.tvCallerName.text = receiverName
         binding.tvCallStatus.text = if (callType == "video") "Videollamada saliente..." else "Llamada saliente..."
 
-        if (!receiverAvatar.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(receiverAvatar.toGlideUrl())
-                .placeholder(R.drawable.ic_profile)
-                .into(binding.ivCallerAvatar)
-        }
+        binding.ivCallerAvatar.loadAvatar(receiverAvatar)
 
         if (callType == "voice") {
             binding.btnToggleVideo.visibility = View.GONE

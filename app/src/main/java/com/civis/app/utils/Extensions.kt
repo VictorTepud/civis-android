@@ -4,9 +4,11 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.view.View
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.core.content.ContextCompat
-import com.bumptech.glide.request.RequestOptions
+import com.bumptech.glide.Glide
+import com.bumptech.glide.signature.ObjectKey
 import com.google.gson.FieldNamingPolicy
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
@@ -77,6 +79,34 @@ fun String.toGlideUrl(): String {
         this
     } else {
         "${com.civis.app.config.ServerConfig.BASE_URL}$this"
+    }
+}
+
+/** Alias corto de toGlideUrl() */
+fun String.n(): String = this.toGlideUrl()
+
+/** Carga una imagen en un ImageView sin cache (para avatares que cambian) */
+fun ImageView.loadAvatar(url: String?, placeholder: Int = com.civis.app.R.drawable.ic_profile) {
+    if (!url.isNullOrEmpty()) {
+        Glide.with(this.context)
+            .load(url.toGlideUrl())
+            .signature(ObjectKey(url.hashCode().toString() + System.currentTimeMillis()))
+            .placeholder(placeholder)
+            .into(this)
+    } else {
+        this.setImageResource(placeholder)
+    }
+}
+
+/** Carga una imagen con cache (para contenido que no cambia, como fotos de estado/media) */
+fun ImageView.loadImage(url: String?, placeholder: Int = com.civis.app.R.drawable.ic_profile) {
+    if (!url.isNullOrEmpty()) {
+        Glide.with(this.context)
+            .load(url.toGlideUrl())
+            .placeholder(placeholder)
+            .into(this)
+    } else {
+        this.setImageResource(placeholder)
     }
 }
 

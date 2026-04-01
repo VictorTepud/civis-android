@@ -5,12 +5,11 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.civis.app.R
 import com.civis.app.data.model.Call
 import com.civis.app.databinding.ItemCallBinding
 import com.civis.app.utils.formatDate
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 
 class CallHistoryAdapter(
     private val onCallClick: ((Call) -> Unit)? = null
@@ -59,12 +58,7 @@ class CallHistoryAdapter(
                 )
             }
 
-            call.caller?.avatar?.let { avatar ->
-                Glide.with(root.context)
-                    .load(avatar.toGlideUrl())
-                    .placeholder(R.drawable.ic_profile)
-                    .into(ivAvatar)
-            }
+            ivAvatar.loadAvatar(call.caller?.avatar)
 
             tvTime.text = call.startedAt?.formatDate() ?: ""
 

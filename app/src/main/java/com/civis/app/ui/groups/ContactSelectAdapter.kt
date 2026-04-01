@@ -5,11 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.civis.app.R
 import com.civis.app.data.model.Contact
 import com.civis.app.databinding.ItemContactSelectBinding
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 
 class ContactSelectAdapter(
     private val onContactSelected: (Contact, Boolean) -> Unit
@@ -36,12 +35,7 @@ class ContactSelectAdapter(
             tvName.text = contact.nickname ?: contact.user.name
             tvPhone.text = contact.user.phone.ifEmpty { contact.user.email }
 
-            if (!contact.user.avatar.isNullOrEmpty()) {
-                Glide.with(root.context)
-                    .load(contact.user.avatar.toGlideUrl())
-                    .placeholder(R.drawable.ic_profile)
-                    .into(ivAvatar)
-            }
+            ivAvatar.loadAvatar(contact.user.avatar)
 
             checkBox.setOnCheckedChangeListener(null)
             checkBox.isChecked = false

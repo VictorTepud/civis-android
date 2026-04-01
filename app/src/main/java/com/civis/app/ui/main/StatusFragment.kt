@@ -7,7 +7,6 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
-import com.bumptech.glide.Glide
 import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.data.model.Status
@@ -17,7 +16,7 @@ import com.civis.app.ui.status.ViewStatusActivity
 import com.civis.app.utils.TokenManager
 import com.civis.app.utils.showToast
 import com.civis.app.utils.appGson
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -71,10 +70,7 @@ class StatusFragment : Fragment() {
     private fun setupMyStatus() {
         val user = TokenManager.getInstance().getUser()
         if (user != null) {
-            Glide.with(this)
-                .load(user.avatar?.toGlideUrl())
-                .placeholder(R.drawable.ic_profile)
-                .into(binding.ivMyStatusAvatar)
+            binding.ivMyStatusAvatar.loadAvatar(user.avatar)
             binding.tvMyStatusTime.text = "Mi estado"
         }
     }
@@ -192,17 +188,7 @@ class StatusRecentAdapter(
             }
             tvPreview.text = previewText
 
-            if (!status.mediaUrl.isNullOrEmpty()) {
-                Glide.with(root.context)
-                    .load(status.mediaUrl.toGlideUrl())
-                    .placeholder(R.drawable.ic_profile)
-                    .into(ivAvatar)
-            } else {
-                Glide.with(root.context)
-                    .load(status.user?.avatar?.toGlideUrl())
-                    .placeholder(R.drawable.ic_profile)
-                    .into(ivAvatar)
-            }
+            ivAvatar.loadAvatar(status.mediaUrl ?: status.user?.avatar)
 
             root.setOnClickListener { onItemClick(status, position) }
         }

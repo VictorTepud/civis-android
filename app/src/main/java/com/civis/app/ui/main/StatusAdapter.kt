@@ -5,10 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.civis.app.data.model.Status
 import com.civis.app.databinding.ItemStatusBinding
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 
 class StatusAdapter(
     private val onItemClick: (Status, Int) -> Unit
@@ -34,17 +33,7 @@ class StatusAdapter(
         with(holder.binding) {
             tvName.text = status.user?.name ?: "Desconocido"
 
-            if (!status.mediaUrl.isNullOrEmpty()) {
-                Glide.with(root.context)
-                    .load(status.mediaUrl.toGlideUrl())
-                    .placeholder(com.civis.app.R.drawable.ic_profile)
-                    .into(ivStatusAvatar)
-            } else {
-                Glide.with(root.context)
-                    .load(status.user?.avatar?.toGlideUrl())
-                    .placeholder(com.civis.app.R.drawable.ic_profile)
-                    .into(ivStatusAvatar)
-            }
+            ivStatusAvatar.loadAvatar(status.mediaUrl ?: status.user?.avatar)
 
             val borderWidth = 3
             ivStatusAvatar.setBorderWidth(borderWidth)

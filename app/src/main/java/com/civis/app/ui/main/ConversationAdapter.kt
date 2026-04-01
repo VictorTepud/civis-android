@@ -5,11 +5,10 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
 import com.civis.app.data.model.Conversation
 import com.civis.app.databinding.ItemConversationBinding
 import com.civis.app.utils.formatDate
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 
 class ConversationAdapter(
     private val onItemClick: (Conversation) -> Unit,
@@ -57,14 +56,7 @@ class ConversationAdapter(
             val avatarUrl = conversation.otherUser?.avatar
                 ?: conversation.avatar
                 ?: conversation.participants.firstOrNull()?.avatar
-            if (!avatarUrl.isNullOrEmpty()) {
-                Glide.with(root.context)
-                    .load(avatarUrl.toGlideUrl())
-                    .placeholder(com.civis.app.R.drawable.ic_profile)
-                    .into(ivAvatar)
-            } else {
-                ivAvatar.setImageResource(com.civis.app.R.drawable.ic_profile)
-            }
+            ivAvatar.loadAvatar(avatarUrl)
 
             // Online status
             val isOnline = conversation.otherUser?.online ?: conversation.online

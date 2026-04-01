@@ -10,13 +10,12 @@ import android.os.Bundle
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.appcompat.app.AppCompatActivity
-import com.bumptech.glide.Glide
 import com.civis.app.R
 import com.civis.app.data.api.ApiClient
 import com.civis.app.databinding.ActivityIncomingCallBinding
 import com.civis.app.services.CallService
 import com.civis.app.utils.showToast
-import com.civis.app.utils.toGlideUrl
+import com.civis.app.utils.loadAvatar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -54,12 +53,7 @@ class IncomingCallActivity : AppCompatActivity() {
         binding.tvCallerName.text = callerName
         binding.tvCallType.text = if (callType == "video") "Videollamada entrante" else "Llamada entrante"
 
-        if (!callerAvatar.isNullOrEmpty()) {
-            Glide.with(this)
-                .load(callerAvatar.toGlideUrl())
-                .placeholder(R.drawable.ic_profile)
-                .into(binding.ivCallerAvatar)
-        }
+        binding.ivCallerAvatar.loadAvatar(callerAvatar)
 
         startRingtone()
         startVibration()

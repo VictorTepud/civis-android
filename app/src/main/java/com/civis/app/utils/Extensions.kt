@@ -98,40 +98,33 @@ fun View.invisible() {
 
 // ========== Permisos Android 13+ ==========
 
-/** Verifica si se tiene permiso para leer imágenes */
 fun Context.hasImagePermission(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_IMAGES)
-            == PackageManager.PERMISSION_GRANTED
+    val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_IMAGES
     } else {
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            == PackageManager.PERMISSION_GRANTED
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
     }
+    return ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
 }
 
-/** Verifica si se tiene permiso para leer videos */
 fun Context.hasVideoPermission(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_MEDIA_VIDEO)
-            == PackageManager.PERMISSION_GRANTED
+    val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_VIDEO
     } else {
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            == PackageManager.PERMISSION_GRANTED
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
     }
+    return ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
 }
 
-/** Verifica si se tiene permiso para leer archivos (documentos) */
 fun Context.hasFilePermission(): Boolean {
-    return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        // En API 33+, READ_MEDIA_IMAGES cubre la mayoría de archivos
-        hasImagePermission()
+    val perm = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        android.Manifest.permission.READ_MEDIA_IMAGES
     } else {
-        ContextCompat.checkSelfPermission(this, android.Manifest.permission.READ_EXTERNAL_STORAGE)
-            == PackageManager.PERMISSION_GRANTED
+        android.Manifest.permission.READ_EXTERNAL_STORAGE
     }
+    return ContextCompat.checkSelfPermission(this, perm) == PackageManager.PERMISSION_GRANTED
 }
 
-/** Retorna los permisos necesarios según la versión de Android */
 fun imagePermissions(): Array<String> {
     return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         arrayOf(android.Manifest.permission.READ_MEDIA_IMAGES)

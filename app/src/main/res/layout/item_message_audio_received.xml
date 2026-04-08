@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="@dimen/spacing_xs">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="start"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/audioContainer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_message_received"
+            android:maxWidth="@dimen/bubble_max_width"
+            android:minWidth="220dp"
+            android:orientation="vertical"
+            android:padding="@dimen/spacing_sm">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ImageView
+                    android:id="@+id/ivPlayPause"
+                    android:layout_width="36dp"
+                    android:layout_height="36dp"
+                    android:padding="@dimen/spacing_sm"
+                    android:src="@drawable/ic_play_audio" />
+
+                <com.civis.app.ui.chat.WaveformView
+                    android:id="@+id/waveformView"
+                    android:layout_width="0dp"
+                    android:layout_height="32dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_weight="1" />
+
+                <ImageView
+                    android:id="@+id/ivDownloadAudio"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginEnd="4dp"
+                    android:src="@drawable/ic_download"
+                    android:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tvAudioDuration"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="2dp"
+                    android:textColor="@color/text_primary"
+                    android:textSize="@dimen/text_xs" />
+
+            </LinearLayout>
+
+            <ProgressBar
+                android:id="@+id/progressAudioDownload"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="2dp"
+                android:layout_marginTop="4dp"
+                android:max="100"
+                android:progress="0"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/tvTime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingTop="2dp"
+                android:textColor="@color/text_secondary"
+                android:textSize="@dimen/text_xs" />
+
+            <ImageView
+                android:id="@+id/ivReadReceipt"
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

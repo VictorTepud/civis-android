@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginVertical="3dp"
+    android:clickable="false"
+    android:focusable="false"
+    android:longClickable="false">
+
+    <LinearLayout
+        android:id="@+id/cardBackground"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_poll_option"
+        android:gravity="center_vertical"
+        android:minHeight="48dp"
+        android:orientation="vertical">
+
+        <!-- Fila superior: indicador + número + texto + porcentaje -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="12dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="4dp">
+
+            <!-- Indicador de color izquierdo -->
+            <View
+                android:id="@+id/colorIndicator"
+                android:layout_width="4dp"
+                android:layout_height="24dp" />
+
+            <!-- Número de opción -->
+            <TextView
+                android:id="@+id/tvOptionNumber"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="10dp"
+                android:background="@drawable/bg_poll_option"
+                android:gravity="center"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="13sp"
+                android:textStyle="bold" />
+
+            <!-- Texto -->
+            <TextView
+                android:id="@+id/tvOptionText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="10dp"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="14sp" />
+
+            <!-- Porcentaje -->
+            <TextView
+                android:id="@+id/tvVotePercent"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+
+        </LinearLayout>
+
+        <!-- Barra de progreso -->
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="6dp"
+            android:layout_marginHorizontal="12dp"
+            android:layout_marginBottom="8dp">
+
+            <!-- Fondo de barra -->
+            <View
+                android:id="@+id/cardBarBackground"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent" />
+
+            <!-- Barra de progreso -->
+            <View
+                android:id="@+id/cardBarProgress"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+        </FrameLayout>
+
+    </LinearLayout>
+
+</FrameLayout>

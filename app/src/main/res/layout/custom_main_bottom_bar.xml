@@ -1,0 +1,178 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/mainBottomBar"
+    android:layout_width="0dp"
+    android:layout_height="56dp"
+    android:background="?android:windowBackground"
+    android:elevation="8dp"
+    android:orientation="horizontal"
+    android:paddingTop="4dp"
+    android:paddingBottom="4dp"
+    app:layout_constraintBottom_toBottomOf="parent"
+    app:layout_constraintEnd_toEndOf="parent"
+    app:layout_constraintStart_toStartOf="parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <LinearLayout
+        android:id="@+id/navHome"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavHome"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_home" />
+
+        <TextView
+            android:id="@+id/tvNavHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Inicio"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navSearch"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavSearch"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_search" />
+
+        <TextView
+            android:id="@+id/tvNavSearch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Buscar"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navMessages"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavMessages"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_messages" />
+
+        <TextView
+            android:id="@+id/tvNavMessages"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mensajes"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navVideos"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavVideos"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_videos" />
+
+        <TextView
+            android:id="@+id/tvNavVideos"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Videos"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navMusic"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavMusic"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_music" />
+
+        <TextView
+            android:id="@+id/tvNavMusic"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Música"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/navMore"
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:clickable="true"
+        android:focusable="true"
+        android:background="?attr/selectableItemBackgroundBorderless">
+
+        <ImageView
+            android:id="@+id/ivNavMore"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:src="@drawable/ic_more_apps" />
+
+        <TextView
+            android:id="@+id/tvNavMore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Más"
+            android:textSize="10sp"
+            android:textColor="@color/tab_inactive" />
+
+    </LinearLayout>
+
+</LinearLayout>

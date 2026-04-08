@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Alias para modo oscuro: los colores legacy apuntan a variantes dark -->
+    <color name="sent_bubble">@color/dark_sent_bubble</color>
+    <color name="received_bubble">@color/dark_received_bubble</color>
+    <color name="background">@color/dark_background</color>
+    <color name="text_primary">@color/dark_text_primary</color>
+    <color name="text_secondary">@color/dark_text_secondary</color>
+    <color name="divider">@color/dark_divider</color>
+    <color name="tab_inactive">@color/dark_icon</color>
+    <color name="card_bg">@color/dark_card_bg</color>
+    <color name="surface">@color/dark_surface</color>
+    <color name="toolbar_bg">@color/dark_toolbar</color>
+    <color name="status_bar_color">@color/dark_status_bar</color>
+    <color name="input_bg">@color/dark_input_bg</color>
+    <color name="input_bar_bg">@color/dark_input_bar_bg</color>
+    <color name="chat_bg">@color/dark_chat_bg</color>
+    <color name="icon_color">@color/dark_icon</color>
+</resources>

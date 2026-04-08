@@ -30,6 +30,8 @@ class SocketService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        // Crear TODOS los canales de notificación (mensajes, llamadas, servicio)
+        NotificationHelper.createChannels(this)
         createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification("Civis activo"))
         setupSocketListeners()

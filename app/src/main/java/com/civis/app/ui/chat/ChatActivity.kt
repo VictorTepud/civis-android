@@ -92,10 +92,17 @@ class ChatActivity : AppCompatActivity() {
         binding = ActivityChatBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Leer extras: pueden venir de la app (receiverId) o de FCM data (senderId)
         conversationId = intent.getStringExtra("conversationId") ?: ""
-        receiverId = intent.getStringExtra("receiverId") ?: ""
-        receiverName = intent.getStringExtra("receiverName") ?: "Chat"
-        receiverAvatar = intent.getStringExtra("receiverAvatar") ?: ""
+        receiverId = intent.getStringExtra("receiverId")
+            ?: intent.getStringExtra("senderId")  // Del data payload FCM
+            ?: ""
+        receiverName = intent.getStringExtra("receiverName")
+            ?: intent.getStringExtra("senderName")  // Del data payload FCM
+            ?: "Chat"
+        receiverAvatar = intent.getStringExtra("receiverAvatar")
+            ?: intent.getStringExtra("senderAvatar")  // Del data payload FCM
+            ?: ""
 
         setupToolbar()
         setupRecyclerView()

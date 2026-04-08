@@ -45,11 +45,19 @@
 
         <activity
             android:name=".ui.main.MainActivity"
+            android:exported="true"
             android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".ui.chat.ChatActivity"
-            android:windowSoftInputMode="adjustResize" />
+            android:exported="true"
+            android:windowSoftInputMode="adjustResize">
+            <!-- Intent filter for FCM click_action="OPEN_CHAT" -->
+            <intent-filter>
+                <action android:name="OPEN_CHAT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
 
         <activity
             android:name=".ui.groups.CreateGroupActivity"
@@ -94,13 +102,35 @@
             android:name=".ui.communities.CreateCommunityActivity"
             android:windowSoftInputMode="adjustResize" />
 
+        <!-- Socket foreground service -->
         <service
             android:name=".services.SocketService"
             android:exported="false" />
 
+        <!-- Call foreground service -->
         <service
             android:name=".services.CallService"
             android:foregroundServiceType="phoneCall"
             android:exported="false" />
+
+        <!-- Firebase Cloud Messaging -->
+        <service
+            android:name=".services.CivisFirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+
+        <!-- Notification reply receiver for inline reply action -->
+        <receiver
+            android:name=".services.NotificationReplyReceiver"
+            android:exported="false" />
+
+        <!-- Default notification channel for Android 13+ -->
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="civis_messages" />
+
     </application>
 </manifest>

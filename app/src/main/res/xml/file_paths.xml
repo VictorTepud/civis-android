@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <!-- Para fotos de la camara en cache -->
+    <cache-path name="camera_images" path="." />
+    <!-- Para archivos temporales subidos -->
+    <cache-path name="uploads" path="." />
+</paths>

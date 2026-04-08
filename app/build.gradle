@@ -1,6 +1,7 @@
 plugins {
     id 'com.android.application'
     id 'org.jetbrains.kotlin.android'
+    id 'com.google.gms.google-services'
     }
 
 android {
@@ -56,6 +57,9 @@ dependencies {
     // WebRTC: se integrará con librería nativa en próxima versión
     implementation 'androidx.work:work-runtime-ktx:2.9.0'
     implementation 'com.google.android.gms:play-services-location:21.0.1'
+    implementation platform('com.google.firebase:firebase-bom:33.0.0')
+    implementation 'com.google.firebase:firebase-messaging'
+    implementation 'com.google.firebase:firebase-analytics'
     annotationProcessor 'com.github.bumptech.glide:compiler:4.16.0'
     implementation 'de.hdodenhof:circleimageview:3.1.0'
 }

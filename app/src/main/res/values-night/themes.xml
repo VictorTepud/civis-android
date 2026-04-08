@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Cuando night mode está activo, el tema base usa colores oscuros -->
+    <style name="Theme.Civis" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/civis_blue</item>
+        <item name="colorPrimaryVariant">@color/civis_blue_dark</item>
+        <item name="colorSecondary">@color/civis_blue_accent</item>
+        <item name="colorOnPrimary">@color/white</item>
+        <item name="colorOnSecondary">@color/white</item>
+        <item name="android:statusBarColor">@color/dark_status_bar</item>
+        <item name="android:navigationBarColor">@color/dark_bottom_nav</item>
+        <item name="android:windowBackground">@color/dark_background</item>
+        <item name="colorSurface">@color/dark_surface</item>
+        <item name="colorOnSurface">@color/dark_text_primary</item>
+        <item name="android:textColorPrimary">@color/dark_text_primary</item>
+        <item name="android:textColorSecondary">@color/dark_text_secondary</item>
+        <item name="materialButtonStyle">@style/CivisButton</item>
+    </style>
+
+    <!-- Auth en modo oscuro -->
+    <style name="Theme.Civis.Auth" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/civis_blue</item>
+        <item name="colorPrimaryVariant">@color/civis_blue_dark</item>
+        <item name="android:statusBarColor">@color/black</item>
+        <item name="android:windowBackground">@color/black</item>
+        <item name="materialButtonStyle">@style/CivisButton</item>
+    </style>
+
+    <!-- Chat en modo oscuro -->
+    <style name="Theme.Civis.Chat" parent="Theme.Civis">
+        <item name="android:statusBarColor">@color/dark_toolbar</item>
+    </style>
+
+    <!-- Toolbar en modo oscuro -->
+    <style name="CivisToolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextColor">@color/dark_text_primary</item>
+        <item name="android:background">@color/dark_toolbar</item>
+    </style>
+</resources>

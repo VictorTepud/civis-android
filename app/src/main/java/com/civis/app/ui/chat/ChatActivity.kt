@@ -19,6 +19,7 @@ import com.civis.app.data.local.LocalMessage
 import com.civis.app.data.model.Message
 import com.civis.app.data.model.SendMessageRequest
 import com.civis.app.databinding.ActivityChatBinding
+import com.civis.app.services.NotificationHelper
 import com.civis.app.ui.calls.CallActivity
 import com.civis.app.utils.cameraPermissions
 import com.civis.app.utils.filePermissions
@@ -103,6 +104,11 @@ class ChatActivity : AppCompatActivity() {
         receiverAvatar = intent.getStringExtra("receiverAvatar")
             ?: intent.getStringExtra("senderAvatar")  // Del data payload FCM
             ?: ""
+
+        // Cancelar notificaciones de esta conversación al abrirla
+        if (conversationId.isNotEmpty()) {
+            NotificationHelper.cancelConversationNotifications(this, conversationId)
+        }
 
         setupToolbar()
         setupRecyclerView()
@@ -602,6 +608,38 @@ class ChatActivity : AppCompatActivity() {
         createdAt = localMsg.createdAt,
         sender = com.civis.app.data.model.User(name = localMsg.senderName ?: "", avatar = localMsg.senderAvatar)
     )
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        // Handle new notification tap while activity is already open
+        intent?.let { newIntent ->
+            val newConvId = newIntent.getStringExtra("conversationId") ?: ""
+            if (newConvId.isNotEmpty() && newConvId != conversationId) {
+                conversationId = newConvId
+                receiverId = newIntent.getStringExtra("receiverId") ?: newIntent.getStringExtra("senderId") ?: ""
+                receiverName = newIntent.getStringExtra("receiverName") ?: newIntent.getStringExtra("senderName") ?: "Chat"
+                receiverAvatar = newIntent.getStringExtra("receiverAvatar") ?: newIntent.getStringExtra("senderAvatar") ?: ""
+                NotificationHelper.cancelConversationNotifications(this, conversationId)
+                setupToolbar()
+                loadMessages()
+            } else if (newConvId.isNotEmpty()) {
+                NotificationHelper.cancelConversationNotifications(this, newConvId)
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (conversationId.isNotEmpty()) {
+            NotificationHelper.setOpenConversation(conversationId)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        NotificationHelper.setOpenConversation(null)
+    }
 
     override fun onDestroy() {
         super.onDestroy()

@@ -11,6 +11,12 @@ interface MessagesApi {
     @POST("messages/send")
     suspend fun sendMessage(@Body req: SendMessageRequest): Response<ApiResponse>
 
+    @POST("messages/conversations/{conversationId}/messages")
+    suspend fun sendMessageToConversation(
+        @Path("conversationId") convId: String,
+        @Body req: SendMessageRequest
+    ): Response<ApiResponse>
+
     @GET("messages/{conversationId}")
     suspend fun getMessages(
         @Path("conversationId") convId: String,

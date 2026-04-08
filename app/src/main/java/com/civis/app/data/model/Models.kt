@@ -245,3 +245,7 @@ data class AddContactRequest(
 data class NicknameRequest(
     val nickname: String
 )
+
+data class FcmTokenRequest(
+    val fcmToken: String
+)

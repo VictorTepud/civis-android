@@ -26,13 +26,11 @@ class SocketService : Service() {
 
     private val gson = appGson
     private val NOTIFICATION_ID = 1001
-    private val CHANNEL_ID = "civis_socket_channel"
+    private val CHANNEL_ID = NotificationHelper.CHANNEL_SERVICE
 
     override fun onCreate() {
         super.onCreate()
-        // Crear TODOS los canales de notificación (mensajes, llamadas, servicio)
         NotificationHelper.createChannels(this)
-        createNotificationChannel()
         startForeground(NOTIFICATION_ID, createNotification("Civis activo"))
         setupSocketListeners()
     }
@@ -42,20 +40,6 @@ class SocketService : Service() {
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
-
-    private fun createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                "Civis Servicio",
-                NotificationManager.IMPORTANCE_LOW
-            ).apply {
-                description = "Mantiene la conexión activa"
-            }
-            val manager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            manager.createNotificationChannel(channel)
-        }
-    }
 
     private fun createNotification(text: String): android.app.Notification {
         val intent = Intent(this, MainActivity::class.java)
@@ -81,7 +65,21 @@ class SocketService : Service() {
                 CoroutineScope(Dispatchers.IO).launch {
                     OfflineSyncManager.saveReceivedMessage(message)
                 }
-                showNotification(message)
+                // Usar NotificationHelper en lugar de la notificación básica
+                val conversationId = message.conversationId
+                val senderName = message.sender?.name ?: "Usuario"
+                val senderAvatar = message.sender?.avatar ?: ""
+                val senderId = message.senderId
+                val content = message.content ?: "Multimedia"
+
+                NotificationHelper.showChatMessage(
+                    context = this@SocketService,
+                    conversationId = conversationId,
+                    senderId = senderId,
+                    senderName = senderName,
+                    senderAvatar = senderAvatar,
+                    content = content
+                )
             } catch (e: Exception) {
                 // Ignorar errores
             }
@@ -95,29 +93,10 @@ class SocketService : Service() {
         }
     }
 
-    private fun showNotification(message: Message) {
-        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val intent = Intent(this, MainActivity::class.java)
-        val pendingIntent = PendingIntent.getActivity(
-            this, 0, intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setContentTitle(message.sender?.name ?: "Nuevo mensaje")
-            .setContentText(message.content ?: "Multimedia")
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setPriority(NotificationCompat.PRIORITY_HIGH)
-            .setContentIntent(pendingIntent)
-            .setAutoCancel(true)
-            .build()
-
-        notificationManager.notify(message.id.hashCode(), notification)
-    }
-
     private fun showCallNotification(callerName: String, callType: String) {
+        NotificationHelper.createChannels(this)
         val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
+        val notification = NotificationCompat.Builder(this, NotificationHelper.CHANNEL_CALLS)
             .setContentTitle("Llamada $callType entrante")
             .setContentText(callerName)
             .setSmallIcon(R.drawable.ic_launcher_foreground)

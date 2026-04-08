@@ -7,6 +7,7 @@ import androidx.fragment.app.Fragment
 import androidx.viewpager2.widget.ViewPager2
 import com.civis.app.R
 import com.civis.app.databinding.ActivityMainBinding
+import com.civis.app.ui.chat.ChatActivity
 import com.civis.app.ui.profile.ProfileActivity
 
 class MainActivity : AppCompatActivity() {
@@ -26,6 +27,38 @@ class MainActivity : AppCompatActivity() {
 
         setupViewPager()
         setupBottomNav()
+
+        // Handle notification intent (from system notification tap when app was closed)
+        handleNotificationIntent(intent)
+    }
+
+    override fun onNewIntent(intent: Intent?) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        handleNotificationIntent(intent)
+    }
+
+    /**
+     * Si el intent viene de una notificación FCM con type=chat_message,
+     * abrir directamente el ChatActivity.
+     */
+    private fun handleNotificationIntent(intent: Intent?) {
+        if (intent == null) return
+        val type = intent.getStringExtra("type")
+        if (type == "chat_message") {
+            val conversationId = intent.getStringExtra("conversationId") ?: return
+            val senderId = intent.getStringExtra("senderId") ?: ""
+            val senderName = intent.getStringExtra("senderName") ?: "Chat"
+            val senderAvatar = intent.getStringExtra("senderAvatar") ?: ""
+
+            startActivity(Intent(this, ChatActivity::class.java).apply {
+                putExtra("conversationId", conversationId)
+                putExtra("receiverId", senderId)
+                putExtra("receiverName", senderName)
+                putExtra("receiverAvatar", senderAvatar)
+                flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+            })
+        }
     }
 
     private fun setupViewPager() {

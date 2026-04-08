@@ -18,7 +18,7 @@ interface UsersApi {
     suspend fun changePassword(@Body req: ChangePasswordRequest): Response<ApiResponse>
 
     @PUT("users/fcm-token")
-    suspend fun updateFcmToken(@Body req: Map<String, String>): Response<ApiResponse>
+    suspend fun updateFcmToken(@Body req: FcmTokenRequest): Response<ApiResponse>
 
     @GET("users/{userId}")
     suspend fun getUser(@Path("userId") userId: String): Response<ApiResponse>
